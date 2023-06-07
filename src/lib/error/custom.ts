@@ -1,7 +1,7 @@
 /**
  * 自定义错误模块
  */
-import { UniverseErrorType, UniverseErrorCode, UniverseErrorData } from '@/typings/error';
+import { UniverseErrorOptionsType, UniverseErrorCode, UniverseErrorData } from '@/typings/error';
 import BaseError from './base';
 
 /**
@@ -14,7 +14,7 @@ export class UniverseError extends BaseError {
   public data?: UniverseErrorData; // 错误数据
   public retryable: boolean; // 是否可以重新连接
 
-  constructor(message: string, code?: UniverseErrorCode, type?: UniverseErrorType, data?: UniverseErrorData) {
+  constructor(message: string, code?: UniverseErrorCode, type?: UniverseErrorOptionsType, data?: UniverseErrorData) {
     super(message);
     this.code = code || UniverseErrorCode.BAD_GETWAY;
     this.type = type;
@@ -28,7 +28,7 @@ export class UniverseError extends BaseError {
  * 为了满足在微服务应用中出现的可重试错误场景，创建该错误类
  */
 export class UniverseRetryableError extends UniverseError {
-  constructor(message: string, code?: UniverseErrorCode, type?: UniverseErrorType, data?: UniverseErrorData) {
+  constructor(message: string, code?: UniverseErrorCode, type?: UniverseErrorOptionsType, data?: UniverseErrorData) {
     super(message, code, type, data);
     this.retryable = true;
   }
@@ -43,7 +43,7 @@ export class StarDisconnectedError extends UniverseRetryableError {
     super(
       `The star's transporter has disconnected. Please try again when a connection is reestablished.`,
       502,
-      UniverseErrorType.BAD_GETWAY
+      UniverseErrorOptionsType.BAD_GETWAY
     );
     this.stack = '';
   }
@@ -60,7 +60,7 @@ export class StarServerError extends UniverseRetryableError {}
  * 为了处理不可重试的客户端错误
  */
 export class StarClientError extends UniverseError {
-  constructor(message: string, code: UniverseErrorCode, type: UniverseErrorType, data?: UniverseErrorData) {
+  constructor(message: string, code: UniverseErrorCode, type: UniverseErrorOptionsType, data?: UniverseErrorData) {
     super(message, code || UniverseErrorCode.RESPONSE_ERROR, type, data);
   }
 }
@@ -78,7 +78,7 @@ export class ServiceNotFoundError extends UniverseRetryableError {
     if (data?.service && data?.version) msg = `Service '${data?.version}.${data?.service}' not found.`;
     else if (data?.service) msg = `Service '${data?.service}' not found.`;
 
-    super(msg, UniverseErrorCode.SERVICE_NOT_FOUND, UniverseErrorType.SERVICE_NOT_FOUND, data);
+    super(msg, UniverseErrorCode.SERVICE_NOT_FOUND, UniverseErrorOptionsType.SERVICE_NOT_FOUND, data);
   }
 }
 
@@ -92,7 +92,7 @@ export class ServiceNotAvailableError extends UniverseRetryableError {
     if (data?.nodeID) msg = `Service '${data?.action}' is not available on '${data?.nodeID}' node.`;
     else msg = `Service '${data?.action}' is not available.`;
 
-    super(msg, UniverseErrorCode.SERVICE_NOT_FOUND, UniverseErrorType.SERVICE_NOT_AVAILABLE, data);
+    super(msg, UniverseErrorCode.SERVICE_NOT_FOUND, UniverseErrorOptionsType.SERVICE_NOT_AVAILABLE, data);
   }
 }
 
@@ -104,7 +104,7 @@ export class RequestTimeoutError extends UniverseRetryableError {
     super(
       `Request is timed out when call '${data?.action}' action on '${data?.nodeID}' node.`,
       UniverseErrorCode.REQUEST_TIMEOUT,
-      UniverseErrorType.REQUEST_TIMEOUT,
+      UniverseErrorOptionsType.REQUEST_TIMEOUT,
       data
     );
   }
@@ -119,7 +119,7 @@ export class RequestSkippedError extends UniverseError {
     super(
       `Calling '${data.action}' is skipped because timeout reached on '${data.nodeID}' node.`,
       UniverseErrorCode.REQUEST_SKIPPED,
-      UniverseErrorType.REQUEST_SKIPPED,
+      UniverseErrorOptionsType.REQUEST_SKIPPED,
       data
     );
     this.retryable = false;
@@ -135,7 +135,7 @@ export class RequestRejectedError extends UniverseRetryableError {
     super(
       `Request is rejected when call '${data?.action}' action on '${data?.nodeID}' node.`,
       UniverseErrorCode.REQUEST_REJECTED,
-      UniverseErrorType.REQUEST_REJECTED,
+      UniverseErrorOptionsType.REQUEST_REJECTED,
       data
     );
   }
@@ -149,8 +149,100 @@ export class QueueIsFullError extends UniverseRetryableError {
     super(
       `Queue is full. Request '${data?.action}' action on '${data?.nodeID}' node is rejected.`,
       UniverseErrorCode.QUEUE_FULL,
-      UniverseErrorType.QUEUE_FULL,
+      UniverseErrorOptionsType.QUEUE_FULL,
       data
     );
+  }
+}
+
+/**
+ * 动作调用参数验证错误类
+ */
+export class ValidationError extends StarClientError {
+  constructor(message: string, type?: UniverseErrorOptionsType, data?: UniverseErrorData) {
+    super(message, UniverseErrorCode.VALIDATION_ERROR, type || UniverseErrorOptionsType.VALIDATION_ERROR, data);
+  }
+}
+
+/**
+ * 最大请求调用级别错误
+ */
+export class MaxCallLevelError extends UniverseError {
+  constructor(data?: UniverseErrorData) {
+    super(
+      `Request level is reached the limit (${data?.level}) on '${data?.nodeID}' node.`,
+      UniverseErrorCode.SERVICE_ERROR,
+      UniverseErrorOptionsType.MAX_CALL_LEVEL,
+      data
+    );
+    this.retryable = false;
+  }
+}
+
+/**
+ * 服务器模式错误
+ */
+export class ServiceSchemaError extends UniverseError {
+  constructor(message: string, data?: UniverseErrorData) {
+    super(message, UniverseErrorCode.SERVICE_ERROR, UniverseErrorOptionsType.SERVICE_SCHEMA_ERROR, data);
+  }
+}
+
+/**
+ * 微服务应用选项错误
+ */
+export class StarOptionsError extends UniverseError {
+  constructor(message: string, data?: UniverseErrorData) {
+    super(message, UniverseErrorCode.SERVICE_ERROR, UniverseErrorOptionsType.STAR_OPTIONS_ERROR, data);
+  }
+}
+
+/**
+ * 停止微服务应用动作超时错误
+ */
+export class GracefulStopTimeoutError extends UniverseError {
+  constructor(data: UniverseErrorData) {
+    if (data && data?.service) {
+      super(
+        `Unable to stop '${data?.service.name}' service gracefully.`,
+        UniverseErrorCode.SERVICE_ERROR,
+        UniverseErrorOptionsType.GRACEFUL_STOP_TIMEOUT,
+        data && data?.service
+          ? {
+              name: data?.service.name,
+              version: data?.service.version
+            }
+          : undefined
+      );
+    } else {
+      super(
+        'Unable to stop ServiceBroker gracefully.',
+        UniverseErrorCode.SERVICE_ERROR,
+        UniverseErrorOptionsType.GRACEFUL_STOP_TIMEOUT
+      );
+    }
+  }
+}
+
+/**
+ * 协议版本不匹配
+ */
+export class ProtocolVersionMismatchError extends UniverseError {
+  constructor(data: UniverseErrorData) {
+    super(
+      'Protocol version mismatch.',
+      UniverseErrorCode.SERVICE_ERROR,
+      UniverseErrorOptionsType.PROTOCOL_VERSION_MISMATCH,
+      data
+    );
+  }
+}
+
+/**
+ * 无效数据包格式错误
+ */
+export class InvalidPacketDataError extends UniverseError {
+  constructor(data) {
+    super('Invalid packet data.', UniverseErrorCode.SERVICE_ERROR, UniverseErrorOptionsType.INVALID_PACKET_DATA, data);
   }
 }

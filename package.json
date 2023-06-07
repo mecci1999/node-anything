@@ -11,6 +11,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.6.3",
     "@commitlint/config-conventional": "^17.6.3",
+    "@types/lodash": "^4.14.195",
     "husky": "^8.0.3",
     "nodemon": "^2.0.22",
     "ts-node": "^10.9.1",
@@ -19,6 +20,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "lodash": "^4.17.21",
     "nats": "^2.14.0"
   }
 }
