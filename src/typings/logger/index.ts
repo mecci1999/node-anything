@@ -11,7 +11,7 @@ export enum BaseLoggerLevels {
 }
 
 export interface LogLevelConfig {
-  type: BaseLoggerLevels; // 类型
+  type?: BaseLoggerLevels; // 类型
   options?: GenericObject;
 }
 

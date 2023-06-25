@@ -1,7 +1,7 @@
 /**
  * 自定义错误模块
  */
-import { UniverseErrorOptionsType, UniverseErrorCode, UniverseErrorData } from '@/typings/error';
+import { UniverseErrorOptionsType, UniverseErrorCode, UniverseErrorData, UniverseErrorType } from '@/typings/error';
 import BaseError from './base';
 
 /**
@@ -9,15 +9,15 @@ import BaseError from './base';
  * 该类用来作为微服务应用所有错误类的基础类
  */
 export class UniverseError extends BaseError {
-  public code?: number; // 错误码
-  public type?: string; // 错误类型
+  public code: UniverseErrorCode; // 错误码
+  public type: UniverseErrorOptionsType; // 错误类型
   public data?: UniverseErrorData; // 错误数据
   public retryable: boolean; // 是否可以重新连接
 
   constructor(message: string, code?: UniverseErrorCode, type?: UniverseErrorOptionsType, data?: UniverseErrorData) {
     super(message);
     this.code = code || UniverseErrorCode.BAD_GETWAY;
-    this.type = type;
+    this.type = type || UniverseErrorOptionsType.BAD_GETWAY;
     this.data = data;
     this.retryable = false;
   }
@@ -201,7 +201,7 @@ export class StarOptionsError extends UniverseError {
  * 停止微服务应用动作超时错误
  */
 export class GracefulStopTimeoutError extends UniverseError {
-  constructor(data: UniverseErrorData) {
+  constructor(data: UniverseErrorData | undefined) {
     if (data && data?.service) {
       super(
         `Unable to stop '${data?.service.name}' service gracefully.`,
@@ -228,7 +228,7 @@ export class GracefulStopTimeoutError extends UniverseError {
  * 协议版本不匹配
  */
 export class ProtocolVersionMismatchError extends UniverseError {
-  constructor(data: UniverseErrorData) {
+  constructor(data: UniverseErrorData | undefined) {
     super(
       'Protocol version mismatch.',
       UniverseErrorCode.SERVICE_ERROR,

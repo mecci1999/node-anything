@@ -2,11 +2,13 @@
  * 日志模块中的基础类
  */
 import _ from 'lodash';
-import { isObject, isString } from '@/utils/index';
-import { BaseLoggerLevels } from '@/typings/logger';
+import { isObject, isString, matchActionOrEvent } from '@/utils/index';
+import { BaseLoggerLevels, LogLevelConfig, LoggerBindings } from '@/typings/logger';
+import { LoggerFactory } from './factory';
+import { GenericObject } from '@/typings';
 
 // 日志模块分类
-const LEVELS: BaseLoggerLevels[] = [
+export const LEVELS: BaseLoggerLevels[] = [
   BaseLoggerLevels.fatal, // 崩溃
   BaseLoggerLevels.error, // 错误
   BaseLoggerLevels.warn, // 警告
@@ -16,17 +18,56 @@ const LEVELS: BaseLoggerLevels[] = [
 ];
 
 // 基础类
-export class BaseLogger {
+export default class BaseLogger {
   // 选项
-  private options = {};
-  private Promise;
+  public options: GenericObject;
+  public Promise: any;
+  // 日志工厂实例
+  public loggerFactory: any;
+  // 微服务对象
+  public star: any;
 
-  constructor(options) {
+  constructor(options: GenericObject) {
     this.options = _.defaultsDeep(options, { level: BaseLoggerLevels.info, createLogger: null });
     // 使用Promise
     this.Promise = Promise;
   }
 
   // 初始化
-  public init() {}
+  public init(loggerFactory: LoggerFactory) {
+    this.loggerFactory = loggerFactory;
+    this.star = loggerFactory.star;
+    this.Promise = loggerFactory.star.Promise;
+  }
+
+  // 停止日志写入
+  public stop() {
+    return this.Promise.resolve();
+  }
+
+  // 获取日志类型
+  public getLogLevel(mod: string): BaseLoggerLevels | null {
+    const logMod = mod ? mod.toUpperCase() : '';
+    const level = this.options.level;
+
+    // 字符串
+    if (isString(level)) return level as BaseLoggerLevels;
+
+    // 对象
+    if (isObject(level)) {
+      if (level[logMod]) return level[logMod] as BaseLoggerLevels;
+
+      const key = Object.keys(level).find((item) => matchActionOrEvent(logMod, item) && item !== '**');
+      if (key) return level[key];
+      else if (level['**']) {
+        return level['**'];
+      }
+    }
+
+    return null;
+  }
+
+  public getLogHandler(bindings: LoggerBindings) {
+    return null;
+  }
 }

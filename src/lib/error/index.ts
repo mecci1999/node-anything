@@ -2,7 +2,7 @@
  * 错误处理模块
  * 该模块用来描述微服务异常过程中所产生的异常场景
  */
-import { recreateError } from './service';
+import { recreateError, resolveRengerator, Regenerator } from './service';
 import {
   GracefulStopTimeoutError,
   InvalidPacketDataError,
@@ -35,5 +35,7 @@ export {
   UniverseError,
   UniverseRetryableError,
   ValidationError,
-  recreateError
+  recreateError,
+  resolveRengerator,
+  Regenerator
 };

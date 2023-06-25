@@ -98,7 +98,16 @@ const defaultOptions = {
   // Promise: null
 };
 export class Star {
+  public options: StarOptions = {};
+  public Promise: PromiseConstructorLike;
+
   constructor(options: StarOptions) {
     _.defaultsDeep(options, defaultOptions);
+
+    if (this.options.Promise) {
+      this.Promise = this.options.Promise;
+    } else {
+      this.Promise = Promise;
+    }
   }
 }

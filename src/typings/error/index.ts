@@ -1,3 +1,5 @@
+import { UniverseError } from '@/lib/error';
+
 /**
  * 错误类型选项枚举
  */
@@ -63,6 +65,7 @@ export interface UniverseErrorData {
   action?: any;
   version?: string;
   level?: number;
+  type?: UniverseErrorOptionsType;
   service?: {
     name: string;
     version: string;
@@ -75,4 +78,10 @@ export interface UniverseErrorOptions {
   type: UniverseErrorOptionsType;
   code: UniverseErrorCode;
   data: UniverseErrorData;
+}
+
+export interface UniversePlainError extends UniverseError {
+  nodeID?: string;
+
+  [key: string]: any;
 }
