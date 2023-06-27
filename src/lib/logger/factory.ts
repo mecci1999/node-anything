@@ -56,7 +56,7 @@ export class LoggerFactory {
 
   // 结束队列中所有的日志实例
   stop() {
-    return this.star.Promise.all(this.appenders.map((app) => app.stop()));
+    return (this.star.Promise as any).all(this.appenders.map((app) => app.stop()));
   }
 
   /**
