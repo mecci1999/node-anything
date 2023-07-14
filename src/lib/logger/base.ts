@@ -67,7 +67,7 @@ export default class BaseLogger {
     return null;
   }
 
-  public getLogHandler(bindings: LoggerBindings) {
+  public getLogHandler(bindings: GenericObject) {
     return null;
   }
 }

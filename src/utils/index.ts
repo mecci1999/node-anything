@@ -1,8 +1,19 @@
 /**
  * 辅助方法模块
  */
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
+import BaseError from '@/lib/error/base';
 
 const RegexCache = new Map();
+
+const lut: string[] = [];
+for (let i = 0; i < 256; i++) {
+  lut[i] = (i < 16 ? '0' : '') + i.toString(16);
+}
+
+class TimeoutError extends BaseError {}
 
 // 检查参数是否为对象
 export function isObject(o: any): boolean {
@@ -124,4 +135,128 @@ export function matchActionOrEvent(text: string, pattern: string): boolean {
     RegexCache.set(origPattern, regex);
   }
   return regex.test(text);
+}
+
+/**
+ * 根据文件路径创建对应的目录结构
+ */
+export function makeDirs(filePath: string) {
+  filePath.split(path.sep).reduce((prevPath, folder) => {
+    // 当前路径
+    const currentPath = path.join(prevPath, folder, path.sep);
+    // 判断目录是否存在
+    if (!fs.existsSync(currentPath)) {
+      // 不存在，就创建目录，这里使用同步创建，是为了避免创建目录顺序错乱导致创建失败
+      fs.mkdirSync(currentPath);
+    }
+
+    return currentPath;
+  }, '');
+}
+
+/**
+ * 生成一个nodeID，生成规则为系统主机名-进程id
+ */
+export function getNodeID(): string {
+  return os.hostname().toLocaleLowerCase() + '-' + process.pid;
+}
+
+/**
+ * 生成uuid  https://jsperf.com/uuid-generator-opt/18
+ */
+export function generateToken() {
+  const d0 = (Math.random() * 0xffffffff) | 0;
+  const d1 = (Math.random() * 0xffffffff) | 0;
+  const d2 = (Math.random() * 0xffffffff) | 0;
+  const d3 = (Math.random() * 0xffffffff) | 0;
+  return (
+    lut[d0 & 0xff] +
+    lut[(d0 >> 8) & 0xff] +
+    lut[(d0 >> 16) & 0xff] +
+    lut[(d0 >> 24) & 0xff] +
+    '-' +
+    lut[d1 & 0xff] +
+    lut[(d1 >> 8) & 0xff] +
+    '-' +
+    lut[((d1 >> 16) & 0x0f) | 0x40] +
+    lut[(d1 >> 24) & 0xff] +
+    '-' +
+    lut[(d2 & 0x3f) | 0x80] +
+    lut[(d2 >> 8) & 0xff] +
+    '-' +
+    lut[(d2 >> 16) & 0xff] +
+    lut[(d2 >> 24) & 0xff] +
+    lut[d3 & 0xff] +
+    lut[(d3 >> 8) & 0xff] +
+    lut[(d3 >> 16) & 0xff] +
+    lut[(d3 >> 24) & 0xff]
+  );
+}
+
+/**
+ * 补充Promise的方法
+ */
+export function polyfillPromise(P: any) {
+  if (!isFunction(P.method)) {
+    P.method = function (fn: Function) {
+      return () => {
+        try {
+          const val = fn.apply(this, arguments);
+          return P.resolve(val);
+        } catch (error) {
+          return P.reject(error);
+        }
+      };
+    };
+  }
+
+  if (!isFunction(P.delay)) {
+    P.delay = function (ms: number) {
+      return new P((resolve: any) => setTimeout(resolve, ms));
+    };
+
+    P.prototype.delay = function (ms: number) {
+      return this.then((res: any) => P.delay(ms).then(() => res));
+    };
+  }
+
+  if (!isFunction(P.prototype.timeout)) {
+    P.TimeoutError = TimeoutError;
+
+    P.prototype.timeout = function (ms: number, message: string) {
+      let timer: any = null;
+      const timeout = new P((resolve, reject) => {
+        timer = setTimeout(() => reject(new P.TimeoutError(message)), +ms);
+      });
+
+      return P.race([timeout, this])
+        .then((value) => {
+          clearTimeout(timer);
+          return value;
+        })
+        .catch((err) => {
+          clearTimeout(timer);
+          throw err;
+        });
+    };
+  }
+
+  if (!isFunction(P.mapSeries)) {
+    P.mapSeries = function (arr, fn) {
+      const promFn = P.method(fn);
+      const res: Array<any> = [];
+
+      return arr
+        .reduce((p, item, i) => {
+          return p.then((r) => {
+            res[i] = r;
+            return promFn(item, i);
+          });
+        }, P.resolve())
+        .then((r) => {
+          res[arr.length] = r;
+          return res.slice(1);
+        });
+    };
+  }
 }

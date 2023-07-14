@@ -1,13 +1,23 @@
 /**
  * 日志模块
  */
-import { BaseLoggerLevels } from '@/typings/logger';
+import { isInheritedClass, isObject, isString } from '@/utils';
 import { StarOptionsError } from '../error';
 import BaseLogger, { LEVELS } from './base';
-import { isInheritedClass, isObject, isString } from '@/utils';
+import ConsoleLogger from './console';
+import { FileLogger } from './file';
+import FormattedLogger from './formatted';
+import { Log4jsLogger } from './log4js';
+import { PinoLogger } from './pino';
 
 export const Loggers = {
   BaseLogger,
+  Formatted: FormattedLogger,
+
+  Console: ConsoleLogger,
+  File: FileLogger,
+  Log4js: Log4jsLogger,
+  Pino: PinoLogger,
 
   LEVELS: LEVELS
 };

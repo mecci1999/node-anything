@@ -20,7 +20,8 @@
       "lib": ["esnext"],
       "types": ["node", "mocha"],
       "paths": {
-          "@/*": ["./src/*"]
+          "@/*": ["./src/*"],
+          "@utils": ["./src/utils/*"]
       }
   },
   "exclude": ["node_modules", "build"],

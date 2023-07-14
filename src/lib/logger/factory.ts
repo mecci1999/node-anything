@@ -90,7 +90,7 @@ export class LoggerFactory {
   getBindingsKey(bindings: LoggerBindings): string {
     if (!bindings) return '';
 
-    return ['nodeID', 'ns', 'mod'].map((key) => bindings[key]).join('|');
+    return ['nodeID', 'namespace', 'mod'].map((key) => bindings[key]).join('|');
   }
 
   // 获取日志
