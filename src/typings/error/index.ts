@@ -17,7 +17,9 @@ export enum UniverseErrorOptionsType {
   STAR_OPTIONS_ERROR = 'STAR_OPTIONS_ERROR', // 微服务选项错误
   GRACEFUL_STOP_TIMEOUT = 'GRACEFUL_STOP_TIMEOUT', // 微服务应用停止超时错误
   PROTOCOL_VERSION_MISMATCH = 'PROTOCOL_VERSION_MISMATCH', // 协议版本不匹配错误
-  INVALID_PACKET_DATA = 'INVALID_PACKET_DATA' // 无效数据包错误
+  INVALID_PACKET_DATA = 'INVALID_PACKET_DATA', // 无效数据包错误
+  MISSING_PAYLOAD = 'MISSING_PAYLOAD',
+  INVALID_ENDPOINT = 'INVALID_ENDPOINT'
 }
 
 export enum UniverseErrorType {
@@ -65,11 +67,15 @@ export interface UniverseErrorData {
   action?: any;
   version?: string;
   level?: number;
-  type?: UniverseErrorOptionsType;
+  type?: UniverseErrorOptionsType | string;
   service?: {
     name: string;
     version: string;
   };
+  actual?: string;
+  received?: string;
+  strategy?: string | null;
+  value?: any;
 }
 
 export interface UniverseErrorOptions {

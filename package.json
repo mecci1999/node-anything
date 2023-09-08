@@ -12,6 +12,7 @@
     "@commitlint/cli": "^17.6.3",
     "@commitlint/config-conventional": "^17.6.3",
     "@types/lodash": "^4.14.195",
+    "@types/msgpack5": "^3.4.3",
     "@types/node": "^20.4.2",
     "@types/pino": "^7.0.5",
     "husky": "^8.0.3",
@@ -22,11 +23,86 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "cbor-x": "^1.5.3",
     "eventemitter2": "^6.4.9",
+    "ioredis": "^5.3.2",
+    "kafka-node": "^5.0.0",
     "kleur": "^4.1.5",
     "lodash": "^4.17.21",
     "log4js": "^6.9.1",
+    "lru-cache": "^10.0.1",
+    "mqtt": "^5.0.2",
+    "msgpack5": "^6.0.2",
     "nats": "^2.14.0",
+    "notepack.io": "^3.0.1",
     "pino": "^8.14.1"
+  },
+  "peerDependenciesMeta": {
+    "amqplib": {
+      "optional": true
+    },
+    "avsc": {
+      "optional": true
+    },
+    "bunyan": {
+      "optional": true
+    },
+    "cbor-x": {
+      "optional": true
+    },
+    "dd-trace": {
+      "optional": true
+    },
+    "debug": {
+      "optional": true
+    },
+    "etcd3": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
+    "jaeger-client": {
+      "optional": true
+    },
+    "kafka-node": {
+      "optional": true
+    },
+    "log4js": {
+      "optional": true
+    },
+    "mqtt": {
+      "optional": true
+    },
+    "msgpack5": {
+      "optional": true
+    },
+    "nats": {
+      "optional": true
+    },
+    "node-nats-streaming": {
+      "optional": true
+    },
+    "notepack.io": {
+      "optional": true
+    },
+    "pino": {
+      "optional": true
+    },
+    "protobufjs": {
+      "optional": true
+    },
+    "redlock": {
+      "optional": true
+    },
+    "rhea-promise": {
+      "optional": true
+    },
+    "thrift": {
+      "optional": true
+    },
+    "winston": {
+      "optional": true
+    }
   }
 }

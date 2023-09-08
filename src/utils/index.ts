@@ -260,3 +260,91 @@ export function polyfillPromise(P: any) {
     };
   }
 }
+
+/**
+ * 获取ip地址
+ */
+export function getIpList() {
+  const list: string[] = [];
+  const ipList: string[] = [];
+  const interfaces = os.networkInterfaces();
+  for (let iface in interfaces) {
+    for (let i in interfaces[iface]) {
+      if (interfaces[iface]?.length) {
+        const f = (interfaces[iface] as os.NetworkInterfaceInfo[])[i] as os.NetworkInterfaceInfo;
+        if (f.family === 'IPv4') {
+          if (f.internal) {
+            ipList.push(f.address);
+            break;
+          } else {
+            list.push(f.address);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return list.length > 0 ? list : ipList;
+}
+
+/**
+ * 是否满足匹配条件
+ */
+export function match(text: string, pattern: string) {
+  // Simple patterns
+  if (pattern.indexOf('?') == -1) {
+    // Exact match (eg. "prefix.event")
+    const firstStarPosition = pattern.indexOf('*');
+    if (firstStarPosition == -1) {
+      return pattern === text;
+    }
+
+    // Eg. "prefix**"
+    const len = pattern.length;
+    if (len > 2 && pattern.endsWith('**') && firstStarPosition > len - 3) {
+      pattern = pattern.substring(0, len - 2);
+      return text.startsWith(pattern);
+    }
+
+    // Eg. "prefix*"
+    if (len > 1 && pattern.endsWith('*') && firstStarPosition > len - 2) {
+      pattern = pattern.substring(0, len - 1);
+      if (text.startsWith(pattern)) {
+        return text.indexOf('.', len) == -1;
+      }
+      return false;
+    }
+
+    // Accept simple text, without point character (*)
+    if (len == 1 && firstStarPosition == 0) {
+      return text.indexOf('.') == -1;
+    }
+
+    // Accept all inputs (**)
+    if (len == 2 && firstStarPosition == 0 && pattern.lastIndexOf('*') == 1) {
+      return true;
+    }
+  }
+
+  // Regex (eg. "prefix.ab?cd.*.foo")
+  const origPattern = pattern;
+  let regex = RegexCache.get(origPattern);
+  if (regex == null) {
+    if (pattern.startsWith('$')) {
+      pattern = '\\' + pattern;
+    }
+    pattern = pattern.replace(/\?/g, '.');
+    pattern = pattern.replace(/\*\*/g, '§§§');
+    pattern = pattern.replace(/\*/g, '[^\\.]*');
+    pattern = pattern.replace(/§§§/g, '.*');
+
+    pattern = '^' + pattern + '$';
+
+    // eslint-disable-next-line security/detect-non-literal-regexp
+    regex = new RegExp(pattern, '');
+    RegexCache.set(origPattern, regex);
+  }
+
+  return regex.test(text);
+}

@@ -1,3 +1,3 @@
-/**
- * 服务注册模块
- */
+import { Registry } from './registry';
+
+export { Registry };
