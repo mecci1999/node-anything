@@ -19,6 +19,7 @@ import MiddlewareHandler from '../middleware/handler';
 import { Middleware } from '@/typings/middleware';
 import Service from './service';
 import C from './constants';
+import { ServiceSettingSchema } from '@/typings/service';
 
 // 默认选项
 const defaultOptions = {
@@ -157,6 +158,7 @@ export class Star {
 
   public registry: Registry | null = null;
   public middlewares: MiddlewareHandler | null = null;
+  public services: Service[] = [];
   // public createService: Function | null = null;
 
   public Promise: PromiseConstructorLike | null = null;
@@ -562,14 +564,14 @@ export class Star {
   /**
    * 在所有的中间件中使用异步通信处理器
    */
-  public callMiddlewareHook(name: string, args: Array<any>, options: any) {
+  public callMiddlewareHook(name: string, args: Array<any>, options?: any) {
     return this.middlewares?.callHandles(name, args, options);
   }
 
   /**
    * 所用的中间件同步通信处理器
    */
-  public callMiddlewareHookSync(name: string, args: Array<any>, options: any) {
+  public callMiddlewareHookSync(name: string, args: Array<any>, options?: any) {
     return this.middlewares?.callSyncHandles(name, args, options);
   }
 
@@ -636,5 +638,40 @@ export class Star {
 
   public getEventGroups(eventName: string) {
     return this.registry?.events.getGroups(eventName);
+  }
+
+  /**
+   * 添加本地服务
+   */
+  public addLocalService(service: Service<ServiceSettingSchema>) {
+    this.services.push(service);
+    // 注册性能指标
+  }
+
+  /**
+   * 当有新增的本地服务或者远程服务时，需要调用该方法
+   * @param localService 是否是本地服务
+   */
+  public servicesChanged(localService: boolean) {
+    this.broadcastLocal('$services.changed', { localService });
+    if (localService && this.transit) {
+      this.localServiceChanged();
+    }
+  }
+
+  /**
+   * 发送一个信息包给远程的节点
+   */
+  public localServiceChanged() {
+    if (!this.stopping) {
+      this.registry?.discoverer.sendLocalNodeInfo();
+    }
+  }
+
+  /**
+   * 获得本地节点信息
+   */
+  public getLocalNodeInfo() {
+    return this.registry?.getLocalNodeInfo();
   }
 }

@@ -94,6 +94,19 @@ export class Regenerator {
     return err;
   }
 
+  public extracPlainError(err: any, payload: any) {
+    return {
+      name: err.name,
+      message: err.message,
+      nodeID: err.nodeID || payload.nodeID || this.star?.nodeID,
+      code: err.code,
+      type: err.type,
+      retryable: err.retryable,
+      stack: err.stack,
+      data: err.data
+    };
+  }
+
   /**
    * Hook to restore a custom error in a child class
    * 创建一个自定义错误子类
@@ -120,7 +133,7 @@ export class Regenerator {
    * Restores external error fields
    * 将外部的错误信息，存储到本地错误中
    */
-  private restoreExternalFields(plainError: UniversePlainError, err: any, payload: GenericObject) {
+  public restoreExternalFields(plainError: UniversePlainError, err: any, payload: GenericObject) {
     err.retryable = plainError.retryable;
     err.nodeID = plainError.nodeID || payload.sender;
   }
@@ -128,7 +141,7 @@ export class Regenerator {
   /**
    * Restores an error stack
    */
-  private restoreStack(plainError: UniversePlainError, err: any) {
+  public restoreStack(plainError: UniversePlainError, err: any) {
     if (plainError.stack) err.stack = plainError.stack;
   }
 }

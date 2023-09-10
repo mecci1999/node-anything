@@ -120,20 +120,24 @@ export default class NodeCatalog {
     const needRegister = node.update(payload, isReconnected);
     if (needRegister && node.services) {
       // 注册节点以及节点的服务
+      this.registry.registerServices(node, node.services);
     }
 
     if (isNew) {
       // 广播
+      this.star.broadcastLocal('$node.connected', { node, reconnected: false });
       // 日志
       this.logger.info(`Node '${nodeID}' connected.`);
       // 更新指标
     } else if (isReconnected) {
       // 广播
+      this.star.broadcastLocal('$node.connected', { node, reconnected: true });
       // 日志
       this.logger.info(`Node '${nodeID} reconnected.'`);
       // 更新指标
     } else {
       // 广播
+      this.star.broadcastLocal('$node.updated', { node });
       // 日志
       this.logger.debug(`Node '${nodeID}' updated.`);
     }
@@ -149,14 +153,16 @@ export default class NodeCatalog {
     if (node && node.available) {
       node.disconnected();
       // 取消注册该节点的服务
+      this.registry.unregisterServicesByNode(node.id);
       // 广播该节点已断开连接
+      this.star.broadcastLocal('$node.disconnected', { node, unexpected: !!isUnexpected });
       // 更新指标
-      
+
       if (isUnexpected) this.logger.warn(`Node '${node.id}' disconnected unexpectedly.`);
       else this.logger.info(`Node '${node.id}' disconnected.`);
 
       // 移除该节点所有的通信请求
-      // if(this.star.transit) this.star.transit.
+      if (this.star.transit) this.star.transit.removePendingRequestByNodeID(nodeID);
     }
   }
 

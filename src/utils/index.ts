@@ -5,8 +5,11 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import BaseError from '@/lib/error/base';
+import kleur from 'kleur';
 
 const RegexCache = new Map();
+
+const deprecateList: Array<any> = [];
 
 const lut: string[] = [];
 for (let i = 0; i < 256; i++) {
@@ -347,4 +350,68 @@ export function match(text: string, pattern: string) {
   }
 
   return regex.test(text);
+}
+
+/**
+ * 废弃一个方法或者属性
+ */
+export function deprecate(prop: any, msg: any) {
+  if (arguments.length === 1) {
+    msg = prop;
+  }
+
+  if (deprecateList.indexOf(prop) === -1) {
+    console.warn(kleur.yellow().bold(`DeprecationWarning: ${msg}`));
+    deprecateList.push(prop);
+  }
+}
+
+export function wrapToArray(o: any) {
+  return Array.isArray(o) ? o : [o];
+}
+
+export function wrapToHandler(o: Function | object): any {
+  return isFunction(o) ? { handler: o } : o;
+}
+
+export function circularReplacer(options = { maxSafeObjectSize: Infinity }) {
+  const seen = new WeakSet();
+  return function (key, value) {
+    if (typeof value === 'object' && value !== null) {
+      const objectType = (value.constructor && value.constructor.name) || typeof value;
+
+      if (options.maxSafeObjectSize && 'length' in value && value.length > options.maxSafeObjectSize) {
+        return `[${objectType} ${value.length}]`;
+      }
+
+      if (options.maxSafeObjectSize && 'size' in value && value.size > options.maxSafeObjectSize) {
+        return `[${objectType} ${value.size}]`;
+      }
+
+      if (seen.has(value)) {
+        //delete this[key];
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  };
+}
+
+/**
+ * 安全改造一个对象
+ */
+export function safetyObject(obj: any, options: any) {
+  return JSON.parse(JSON.stringify(obj, circularReplacer(options)));
+}
+
+/**
+ * 移除数组中的某个元素
+ */
+export function removeFromArray(arr: Array<any>, item: any) {
+  if (!arr || arr.length === 0) return arr;
+
+  const index = arr.indexOf(item);
+  if (index !== -1) arr.splice(item, 1);
+  return arr;
 }

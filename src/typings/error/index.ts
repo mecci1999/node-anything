@@ -76,6 +76,9 @@ export interface UniverseErrorData {
   received?: string;
   strategy?: string | null;
   value?: any;
+  schema?: any;
+  size?: number;
+  limit?: number;
 }
 
 export interface UniverseErrorOptions {

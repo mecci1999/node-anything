@@ -1,11 +1,15 @@
 import { isInheritedClass, isObject, isString } from '@/utils';
 import BaseDiscoverer from './base';
+import Etcd3Discoverer from './etcd3';
+import RedisDiscoverer from './redis';
 
 /**
  * 服务发现模块
  */
 const Discoverers = {
-  Base: BaseDiscoverer
+  Base: BaseDiscoverer,
+  Etcd3: Etcd3Discoverer,
+  Redis: RedisDiscoverer
 };
 
 function getByName(name: string) {

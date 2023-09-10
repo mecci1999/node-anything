@@ -1,5 +1,5 @@
 import Packet from '../packets';
-import { Transform } from 'stream';
+import { Stream, Transform } from 'stream';
 import { Star } from '../star';
 import { LoggerInstance } from '@/typings/logger';
 import { GenericObject } from '@/typings';
@@ -13,6 +13,8 @@ import { Registry } from '../registry';
 import Node from '../registry/node';
 import C from '../star/constants';
 import Context from '../context';
+import { QueueIsFullError, RequestRejectedError } from '../error/custom';
+import _ from 'lodash';
 
 export default class Transit {
   public star: Star;
@@ -42,7 +44,12 @@ export default class Transit {
     // this.metrics = star.metrics;  // 性能指标
     this.instanceID = star.instanceID;
     this.transporter = transporter;
-    this.options = options;
+    this.options = _.defaultsDeep(
+      {
+        maxQueueSize: 50000 // 请求最大数量为50000
+      },
+      options
+    );
     this.discoverer = (star.registry as Registry).discoverer;
     this.errorRegenerator = star.errorRegenerator;
 
@@ -223,6 +230,254 @@ export default class Transit {
         error,
         module: 'transit',
         type: C.FAILED_SEND_EVENT_PACKET
+      });
+    });
+  }
+
+  /**
+   * 根据nodeID移除一个正在审核的请求或流
+   * @param nodeID
+   */
+  public removePendingRequestByNodeID(nodeID: string) {
+    this.logger.debug(`Remove pending requests of '${nodeID}' node.`);
+    this.pendingRequests.forEach((req, id) => {
+      if (req.nodeID === nodeID) {
+        this.pendingRequests.delete(id);
+        req.reject(new RequestRejectedError({ action: req.action?.name || req.action, nodeID: req.nodeID }));
+        this.pendingReqStreams.delete(id);
+        this.pendingResStreams.delete(id);
+      }
+    });
+  }
+
+  /**
+   * 发送一个请求给一个远程的服务
+   */
+  public request(ctx: Context) {
+    if (this.options?.maxQueueSize && this.pendingRequests.size >= this.options.maxQueueSize) {
+      // 待发送的请求数量超出设置的最大数量
+      return Promise.reject(
+        new QueueIsFullError({
+          action: ctx?.action?.name || '',
+          nodeID: this.nodeID,
+          size: this.pendingRequests.size,
+          limit: this.options.maxQueueSize
+        })
+      );
+    }
+
+    return new Promise((resolve, reject) => this._sendRequest(ctx, resolve, reject));
+  }
+
+  /**
+   * 发送一个远程请求
+   */
+  public _sendRequest(ctx: Context, resolve: any, reject: any) {
+    // 是否为流
+    const isStream =
+      ctx.params &&
+      ctx.params.readable === true &&
+      typeof ctx.params.on === 'function' &&
+      typeof ctx.params.pipe === 'function';
+
+    const request: TransitRequest = {
+      action: ctx.action,
+      nodeID: ctx.nodeID || '',
+      ctx,
+      resolve,
+      reject,
+      stream: isStream
+    };
+
+    const payload: any = {
+      id: ctx.id,
+      action: ctx.action?.name || '',
+      params: isStream ? null : ctx.params,
+      meta: ctx.meta,
+      timeout: ctx.options.timeout,
+      level: ctx.level,
+      tracing: ctx.tracing,
+      parentID: ctx.parentID,
+      requestID: ctx.requestID,
+      caller: ctx.caller,
+      stream: isStream
+    };
+
+    if (payload.stream) {
+      // 使用流
+      if (
+        ctx.params.readableObjectMode === true ||
+        (ctx.params._readableState && ctx.params._readableState.objectMode === true)
+      ) {
+        payload.meta = payload.meta || {};
+        payload.meta['$streamObjectMode'] = true;
+      }
+      payload.seq = 0;
+    }
+
+    const packet = new Packet(PacketTypes.PACKET_REQUEST, ctx.nodeID, payload);
+    const nodeName = ctx.nodeID ? `'${ctx.nodeID}'` : 'someone';
+    const requestID = ctx.requestID ? "with requestID '" + ctx.requestID + "' " : '';
+    this.logger.debug(`=> Send '${ctx.action?.name}' request ${requestID} to ${nodeName} node.`);
+
+    const publishCatch = (error) => {
+      this.logger.error(`Unable to send '${ctx.action?.name}' request ${requestID} to ${nodeName} node.`);
+      // 广播
+      this.star.broadcastLocal('$transit.error', {
+        error,
+        module: 'transit',
+        type: C.FAILED_SEND_REQUEST_PACKET
+      });
+    };
+
+    // 添加到审核队列中
+    this.pendingRequests.set(ctx.id, request);
+
+    // 发布请求
+    return this.publish(packet)
+      .then(() => {
+        if (isStream) {
+          // 使用流发送请求
+          payload.meta = {};
+          if (
+            ctx.params.readableObjectMode === true ||
+            (ctx.params._readableState && ctx.params._readableState.objectMode === true)
+          ) {
+            payload.meta['$streamObjectMode'] = true;
+          }
+
+          const stream = ctx.params; // 可读流
+          stream.on('data', (chunk) => {
+            // 暂停流
+            stream.pause();
+            const chunks: Buffer[] = [];
+            if (
+              chunk instanceof Buffer &&
+              this.options?.maxChunkSize &&
+              this.options?.maxChunkSize > 0 &&
+              chunk.length > this.options.maxChunkSize
+            ) {
+              // 请求流的长度超出了最大的大小限制
+              let len = chunk.length;
+              let i = 0;
+              while (i < len) {
+                chunks.push(chunk.slice(i, (i += this.options.maxChunkSize)));
+              }
+            } else {
+              chunks.push(chunk);
+            }
+            for (const ch of chunks) {
+              const copy = Object.assign({}, payload);
+              copy.seq = ++payload.seq;
+              copy.stream = true;
+              copy.params = ch;
+
+              this.logger.debug(`=> Send steam chunk ${requestID} to ${nodeName} node. Seq: ${copy.seq}`);
+              this.publish(new Packet(PacketTypes.PACKET_REQUEST, ctx.nodeID, copy)).catch(publishCatch);
+            }
+            // 继续
+            stream.resume();
+            return;
+          });
+
+          stream.on('end', () => {
+            const copy = Object.assign({}, payload);
+            copy.seq = ++payload.seq;
+            copy.params = null;
+            copy.stream = false;
+
+            this.logger.debug(`=> Send stream closing ${requestID} to ${nodeName} node. Seq: ${copy.seq}`);
+
+            return this.publish(new Packet(PacketTypes.PACKET_REQUEST, ctx.nodeID, copy)).catch(publishCatch);
+          });
+
+          stream.on('error', (error) => {
+            const copy = Object.assign({}, payload);
+            copy.seq = ++payload.seq;
+            copy.params = null;
+            copy.stream = false;
+            copy.meta['$streamError'] = this._createPayloadErrorField(error, payload);
+
+            this.logger.debug(`=> Send stream error ${requestID} to ${nodeName} node.`, copy.meta['$streamError']);
+
+            return this.publish(new Packet(PacketTypes.PACKET_REQUEST, ctx.nodeID, copy)).catch(publishCatch);
+          });
+        }
+      })
+      .catch((error) => {
+        publishCatch(error);
+        reject(error);
+      });
+  }
+
+  /**
+   * 创建一个错误的字段
+   */
+  public _createPayloadErrorField(error: any, payload: any) {
+    return this.errorRegenerator?.extracPlainError(error, payload);
+  }
+
+  /**
+   * 发送一个断开链接的包给远程的节点
+   */
+  public sendDisconnectPacket() {
+    return this.publish(new Packet(PacketTypes.PACKET_DISCONNECT, null, {})).catch((error) => {
+      this.logger.error('Unable to send DISCONNECT packet.', error);
+    });
+  }
+
+  /**
+   * 发现节点
+   */
+  public discoverNode(nodeID: string) {
+    return this.publish(new Packet(PacketTypes.PACKET_DISCOVER, nodeID, {})).catch((error) => {
+      this.logger.error(`Unable to send DISCOVER packet to '${nodeID}' node.`, error);
+      // 广播
+      this.star.broadcastLocal('$transit.error', {
+        error,
+        module: 'transit',
+        type: C.FAILED_NODE_DISCOVERY
+      });
+    });
+  }
+
+  /**
+   * 发现所有的节点
+   */
+  public discoverNodes() {
+    return this.publish(new Packet(PacketTypes.PACKET_DISCOVER, null, {})).catch((error) => {
+      this.logger.error(`Unable to send DISCOVER packet.`, error);
+      this.star.broadcastLocal('$transit.error', {
+        error,
+        module: 'transit',
+        type: C.FAILED_NODES_DISCOVERY
+      });
+    });
+  }
+
+  /**
+   * 发送节点信息
+   */
+  public sendNodeInfo(info: any, nodeID: string) {
+    if (!this.connected || !this.isReady) return Promise.resolve();
+
+    return this.publish(
+      new Packet(PacketTypes.PACKET_INFO, nodeID, {
+        services: info.services,
+        ipList: info.ipList,
+        hostname: info.hostname,
+        client: info.client,
+        config: info.config,
+        instanceID: this.star.instanceID,
+        metadata: info.metadata,
+        seq: info.seq
+      })
+    ).catch((error) => {
+      this.logger.error(`Unable to send INFO packet to '${nodeID}' node.`, error);
+      this.star.broadcastLocal('$transit.error', {
+        error,
+        module: 'transit',
+        type: C.FAILED_SEND_INFO_PACKET
       });
     });
   }
