@@ -4,6 +4,7 @@ import { LoggerInstance } from '@/typings/logger';
 import Node from '../node';
 import ServiceItem from '../service-item';
 import _ from 'lodash';
+import { removeFromArray } from '@/utils';
 
 export default class ServiceCatalog {
   public registry: Registry;
@@ -143,13 +144,29 @@ export default class ServiceCatalog {
 
   /**
    * 根据nodeID移除所有的服务
-   * @param nodeID 
+   * @param nodeID
    */
-  public removeAllByNodeID(nodeID:string) {
-    _.remove(this.services, service => {
-      if(service.node.id === nodeID) {
-        // this.registry.actions 
+  public removeAllByNodeID(nodeID: string) {
+    _.remove(this.services, (service) => {
+      if (service.node.id === nodeID) {
+        // 移除服务动作
+        this.registry.actions.removeByService(service);
+        // 移除服务事件
+        this.registry.events.removeByService(service);
+        return;
       }
-    })
+    });
+  }
+
+  /**
+   * 移除端口
+   */
+  public remove(fullName: string, nodeID: string) {
+    let service = this.get(fullName, nodeID);
+    if (service) {
+      this.registry.actions.removeByService(service);
+      this.registry.events.removeByService(service);
+      removeFromArray(this.services, service);
+    }
   }
 }

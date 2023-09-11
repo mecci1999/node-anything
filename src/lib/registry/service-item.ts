@@ -30,7 +30,7 @@ export default class ServiceItem {
   /**
    * 检查某服务是否具有相等的属性
    */
-  public equals(fullName: string, nodeID: string) {
+  public equals(fullName: string, nodeID?: string) {
     return this.fullName === fullName && (nodeID == null || this.node.id === nodeID);
   }
 

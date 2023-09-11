@@ -2,12 +2,14 @@ import { isInheritedClass, isObject, isString } from '@/utils';
 import BaseDiscoverer from './base';
 import Etcd3Discoverer from './etcd3';
 import RedisDiscoverer from './redis';
+import LocalDiscoverer from './local';
 
 /**
  * 服务发现模块
  */
 const Discoverers = {
   Base: BaseDiscoverer,
+  Local: LocalDiscoverer,
   Etcd3: Etcd3Discoverer,
   Redis: RedisDiscoverer
 };

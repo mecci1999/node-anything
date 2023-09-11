@@ -14,6 +14,7 @@ import Service from '../star/service';
 import _ from 'lodash';
 import ServiceItem from './service-item';
 import { safetyObject } from '@/utils';
+import ActionEndpoint from './endpoint/action';
 
 /**
  * 服务注册模块
@@ -52,6 +53,8 @@ export class Registry {
     this.events = new EventCatalog(this, star, this.StrategyFactory);
 
     // 注册性能指标服务
+    this.registerUniverseMetrics();
+    this.updateMetrics();
   }
 
   /**
@@ -67,6 +70,16 @@ export class Registry {
   public stop() {
     return this.discoverer.stop();
   }
+
+  /**
+   * 注册性能指标模块
+   */
+  private registerUniverseMetrics() {}
+
+  /**
+   * 更新性能指标模块
+   */
+  private updateMetrics() {}
 
   /**
    * 注册动作
@@ -133,7 +146,8 @@ export class Registry {
       this.localNodeInfoInvalidated = 'seq';
       this.logger.info(`'${service.name}' service is registered.`);
       this.star.servicesChanged(true);
-      // 注册性能数据
+      // 更新性能数据
+      this.updateMetrics();
     }
   }
 
@@ -183,13 +197,26 @@ export class Registry {
         });
       }
     });
-  }
 
-  /**
-   * 取消订阅服务通过nodeID
-   */
-  public unregisterServicesByNode(nodeID: string) {
-    this.services.removeAllByNodeID(nodeID);
+    // 移除已存在的旧服务
+    const prevServices = Array.from(this.services.services);
+    prevServices.forEach((service) => {
+      if (service.node !== node) return;
+
+      let exist = false;
+      serviceList.forEach((item) => {
+        if (service.equals(item.fullName, service.node.id)) {
+          exist = true;
+        }
+
+        if (!exist) {
+          this.unregisterService(service.fullName, node.id);
+        }
+      });
+    });
+
+    this.star.servicesChanged(false);
+    this.updateMetrics();
   }
 
   /**
@@ -207,6 +234,32 @@ export class Registry {
   }
 
   /**
+   * 取消订阅服务
+   */
+  public unregisterService(fullName: string, nodeID?: string) {
+    if (!this.star.nodeID) return;
+    nodeID = nodeID || this.star.nodeID;
+    // 移除服务
+    this.services.remove(fullName, nodeID);
+    if (nodeID === this.star.nodeID) {
+      // 清楚本地服务
+      const index = this.nodes.localNode?.services.findIndex((item) => item.fullName === fullName);
+      if (index && index !== -1) this.nodes.localNode?.services.splice(index, 1);
+    }
+
+    if (nodeID == this.star.nodeID) {
+      this.localNodeInfoInvalidated = 'seq';
+    }
+  }
+
+  /**
+   * 取消订阅服务通过nodeID
+   */
+  public unregisterServicesByNode(nodeID: string) {
+    this.services.removeAllByNodeID(nodeID);
+  }
+
+  /**
    * 检查动作是否可见
    */
   public checkActionVisibility(action: any, node: Node) {
@@ -215,22 +268,6 @@ export class Registry {
     if (action.visibility == 'protected' && node.local) return true;
 
     return false;
-  }
-
-  /**
-   * 通过nodeID找到动作端口
-   */
-  public getActionEndpointByNodeId(actionName: string, nodeID: string) {
-    // 找到该动作的所有端口列表
-    const list = this.actions.get(actionName);
-    if (list) return list.getEndpointByNodeID(nodeID);
-  }
-
-  /**
-   * 通过动作名找到所有的端口
-   */
-  public getActionEndpoints(actionName: string) {
-    return this.actions.get(actionName);
   }
 
   /**
@@ -271,5 +308,100 @@ export class Registry {
     }
 
     return this.nodes.localNode.rawInfo;
+  }
+
+  /**
+   * 根据nodeID获得节点信息
+   */
+  public getNodeInfo(nodeID: string) {
+    const node = this.nodes.get(nodeID);
+    if (!node) return null;
+    if (node.local) return this.getLocalNodeInfo();
+
+    return node.rawInfo;
+  }
+
+  /**
+   * 创建一个私有的本地端口和私有的动作
+   */
+  public createPrivateActionEndpoint(action: any) {
+    if (!this.nodes.localNode) return;
+
+    return new ActionEndpoint(this, this.star, this.nodes.localNode, action.service, action);
+  }
+
+  /**
+   * 检查某个服务是否存在
+   */
+  public hasService(fullName: string, nodeID: string) {
+    return this.services.has(fullName, nodeID);
+  }
+
+  /**
+   * 通过动作名找到所有的端口
+   */
+  public getActionEndpoints(actionName: string) {
+    return this.actions.get(actionName);
+  }
+
+  /**
+   * 通过动作名和nodeID得到一个端口
+   */
+  public getActionEndpointByNodeId(actionName: string, nodeID: string) {
+    // 找到该动作的所有端口列表
+    const list = this.actions.get(actionName);
+    if (list) return list.getEndpointByNodeID(nodeID);
+  }
+
+  /**
+   * 获得节点列表
+   */
+  public getNodeList(options: { onlyAvaiable: boolean; withServices: boolean }) {
+    return this.nodes.list(options);
+  }
+
+  /**
+   * 获得服务列表
+   */
+  public getServiceList(options: {
+    onlyLocal: boolean; // 仅本地
+    onlyAvaliable: boolean; // 仅可信赖的
+    skipInterval: boolean; // 跳过时间间隔
+    withActions: boolean; // 携带动作
+    withEvents: boolean; // 携带事件
+    grouping: boolean; // 分组
+  }) {
+    return this.services.list(options);
+  }
+
+  /**
+   * 获取动作列表
+   */
+  public getActionList(options: {
+    onlyLocal: boolean; // 仅本地
+    onlyAvaliable: boolean; // 仅可信赖的
+    skipInterval: boolean; // 跳过时间间隔
+    withEndpoints: boolean; // 携带端口的
+  }) {
+    return this.actions.list(options);
+  }
+
+  /**
+   * 获取事件列表
+   */
+  public getEventList(options: {
+    onlyLocal: boolean; // 仅本地
+    onlyAvaliable: boolean; // 仅可信赖的
+    skipInterval: boolean; // 跳过时间间隔
+    withEndpoints: boolean; // 携带端口的
+  }) {
+    return this.events.list(options);
+  }
+
+  /**
+   * 获取未加工的解节点信息列表
+   */
+  public getNodeRawList() {
+    return this.nodes.toArray().map((node) => node.rawInfo);
   }
 }
