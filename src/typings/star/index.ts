@@ -8,6 +8,9 @@ import { Regenerator } from '@/lib/error';
 import Context from '@/lib/context';
 import { StarTransitOptions } from '../transit';
 import Service from '@/lib/star/service';
+import { ServiceSchema } from '../service';
+import { Star } from '@/lib/star';
+import { Middleware } from '../middleware';
 
 /**
  * 配置项
@@ -44,7 +47,7 @@ export interface StarOptions {
 
   ContextFactory?: Context;
 
-  // requestTimeout?: number;
+  requestTimeout?: number;
   // retryPolicy?: RetryPolicyOptions;
 
   // tracking?: BrokerTrackingOptions;
@@ -61,11 +64,11 @@ export interface StarOptions {
   // metrics?: boolean | MetricRegistryOptions;
   // tracing?: boolean | TracerOptions;
 
-  // internalServices?:
-  // 	| boolean
-  // 	| {
-  // 			[key: string]: Partial<ServiceSchema>;
-  // 	  };
+  internalServices?:
+    | boolean
+    | {
+        [key: string]: Partial<ServiceSchema>;
+      };
   internalMiddlewares?: boolean;
 
   dependencyInterval?: number;
@@ -73,16 +76,16 @@ export interface StarOptions {
 
   hotReload?: boolean | HotReloadOptions;
 
-  // middlewares?: (Middleware | string)[];
+  middlewares?: (Middleware | string)[];
 
-  // replCommands?: GenericObject[] | null;
+  replCommands?: GenericObject[] | null;
   replDelimiter?: string;
 
   ServiceFactory?: Service;
 
-  // created?: BrokerSyncLifecycleHandler;
-  // started?: BrokerAsyncLifecycleHandler;
-  // stopped?: BrokerAsyncLifecycleHandler;
+  created?: StarSyncLifecyleHandler;
+  started?: StarAsyncLifecyleHandler;
+  stopped?: StarAsyncLifecyleHandler;
 
   // /**
   //  * If true, process.on("beforeExit/exit/SIGINT/SIGTERM", ...) handler won't be registered!
@@ -96,3 +99,6 @@ export interface StarOptions {
 export interface HotReloadOptions {
   modules?: string[];
 }
+
+export type StarAsyncLifecyleHandler = (star: Star) => void;
+export type StarSyncLifecyleHandler = (star: Star) => void | Promise<void>;

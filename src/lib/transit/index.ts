@@ -35,6 +35,7 @@ export default class Transit {
   public isReady: boolean;
   public stat: GenericObject;
   public subscribing: Promise<any> | null = null;
+  public __connectResolve: any;
 
   constructor(star: Star, transporter: Transporter, options?: StarTransitOptions) {
     this.star = star;
@@ -75,7 +76,178 @@ export default class Transit {
     this.disconnecting = false;
     this.isReady = false;
 
-    const wrappedMessageHandler = (cmd: string, packet: GenericObject) => this.messageHandler(cmd, packet);
+    const wrappedMessageHandler = (cmd: string, packet: any) => this.messageHandler(cmd, packet);
+
+    this.publish = this.star.wrapMethod('transitPublish', this.publish, this) as any;
+    this.messageHandler = this.star.wrapMethod('transitMessageHandler', this.messageHandler, this) as any;
+
+    if (this.transporter) {
+      // 初始化
+      this.transporter.init(this, wrappedMessageHandler, this.afterConnect.bind(this));
+    }
+
+    this.__connectResolve = null;
+  }
+
+  /**
+   * tranporter模块连接成功之后
+   */
+  public afterConnect(wasReconnect: boolean) {
+    let timer: any = null;
+
+    return Promise.resolve()
+      .then(() => {
+        if (wasReconnect) {
+          // 重新连接后，更新该节点的信息
+          return this.discoverer?.sendLocalNodeInfo();
+        } else {
+          // 首次连接，完成订阅动作
+          return this.makeSubscriptions();
+        }
+      })
+      .then(() => this.discoverer?.discoverAllNodes())
+      .then(() => {
+        // 等待500ms时间，等待接收数据包
+        timer = setTimeout(() => {
+          this.connected = true;
+          // 性能注册
+          // 广播
+          this.star.broadcastLocal('$transporter.connected', {
+            wasReconnect: !!wasReconnect
+          });
+
+          if (this.__connectResolve) {
+            this.isReady = true;
+            this.__connectResolve();
+            this.__connectResolve = null;
+          }
+
+          return null;
+        }, 500);
+      })
+      .finally(() => {
+        clearTimeout(timer);
+        timer = null;
+      });
+  }
+
+  /**
+   * 连接到tansporter模块，如果失败，每次间隔5s后会重试
+   */
+  public connect() {
+    this.logger.info('Connecting to the transporter...');
+    return new Promise((resolve, reject) => {
+      this.__connectResolve = resolve;
+      const doConnect = () => {
+        let reconnectStarted = false;
+
+        const errorHandler = (error) => {
+          if (this.disconnecting) return;
+          if (reconnectStarted) return;
+
+          this.logger.warn('Connection is failed.', (error && error.message) || 'Unknown error');
+          this.logger.debug(error);
+          if (this.options?.disableReconnect) {
+            // 禁止重新连接
+            return;
+          }
+
+          reconnectStarted = true;
+
+          setTimeout(() => {
+            this.logger.info('Reconnecting...');
+            doConnect();
+          }, 5 * 1000);
+        };
+        // 连接transporter模块
+        this.transporter.connect().catch(errorHandler);
+      };
+
+      doConnect();
+    });
+  }
+
+  /**
+   * 断开链接
+   */
+  public disconnect() {
+    this.connected = false;
+    this.isReady = false;
+    this.disconnecting = true;
+
+    this.star.broadcastLocal('$transporter.disconnected', { graceFul: true });
+
+    return Promise.resolve()
+      .then(() => {
+        if (this.transporter.connected) {
+          return this.discoverer?.localNodeDisconnected().then(() => this.transporter.disconnect());
+        }
+      })
+      .then(() => {
+        this.disconnecting = false;
+      });
+  }
+
+  /**
+   * 本地节点准备好了，所有的服务加载完毕
+   */
+  public ready() {
+    if (this.connected) {
+      // 性能参数注册
+      return;
+    }
+  }
+
+  /**
+   * 发送一个断开链接的包给远程的节点
+   */
+  public sendDisconnectPacket() {
+    return this.publish(new Packet(PacketTypes.PACKET_DISCONNECT, null, {})).catch((error) => {
+      this.logger.error('Unable to send DISCONNECT packet.', error);
+    });
+  }
+
+  /**
+   * 订阅通信过程中所有的动作
+   */
+  public makeSubscriptions() {
+    this.subscribing = this.transporter
+      .makeSubscriptions([
+        // 订阅广播事件
+        { cmd: PacketTypes.PACKET_EVENT, nodeID: this.nodeID },
+
+        // 订阅请求事件
+        { cmd: PacketTypes.PACKET_REQUEST, nodeID: this.nodeID },
+
+        // 订阅节点对请求的响应事件
+        { cmd: PacketTypes.PACKET_RESPONSE, nodeID: this.nodeID },
+
+        // 订阅服务发现处理事件
+        { cmd: PacketTypes.PACKET_DISCOVER },
+        { cmd: PacketTypes.PACKET_DISCOVER, nodeID: this.nodeID },
+
+        // 订阅节点信息处理事件
+        { cmd: PacketTypes.PACKET_INFO }, // 广播信息，如果一个新的节点进行连接动作
+        { cmd: PacketTypes.PACKET_INFO, nodeID: this.nodeID },
+
+        // 订阅断开链接事件
+        { cmd: PacketTypes.PACKET_DISCONNECT },
+
+        // 订阅心跳处理事件
+        { cmd: PacketTypes.PACKET_HEARTBEAT },
+
+        // 订阅ping请求事件
+        { cmd: PacketTypes.PACKET_PING },
+        { cmd: PacketTypes.PACKET_PING, nodeID: this.nodeID },
+
+        //订阅pong响应事件
+        { cmd: PacketTypes.PACKET_PONG, nodeID: this.nodeID }
+      ])
+      .then(() => {
+        this.subscribing = null;
+      });
+
+    return this.subscribing;
   }
 
   /**
@@ -415,15 +587,6 @@ export default class Transit {
    */
   public _createPayloadErrorField(error: any, payload: any) {
     return this.errorRegenerator?.extracPlainError(error, payload);
-  }
-
-  /**
-   * 发送一个断开链接的包给远程的节点
-   */
-  public sendDisconnectPacket() {
-    return this.publish(new Packet(PacketTypes.PACKET_DISCONNECT, null, {})).catch((error) => {
-      this.logger.error('Unable to send DISCONNECT packet.', error);
-    });
   }
 
   /**

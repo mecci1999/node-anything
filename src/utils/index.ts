@@ -11,6 +11,9 @@ const RegexCache = new Map();
 
 const deprecateList: Array<any> = [];
 
+const units = ['h', 'm', 's', 'ms', 'μs', 'ns'];
+const divisors = [60 * 60 * 1000, 60 * 1000, 1000, 1, 1e-3, 1e-6];
+
 const lut: string[] = [];
 for (let i = 0; i < 256; i++) {
   lut[i] = (i < 16 ? '0' : '') + i.toString(16);
@@ -414,4 +417,28 @@ export function removeFromArray(arr: Array<any>, item: any) {
   const index = arr.indexOf(item);
   if (index !== -1) arr.splice(item, 1);
   return arr;
+}
+
+/**
+ * 时间展示
+ */
+export function humanize(milli: any) {
+  if (milli == null) return '?';
+
+  for (let i = 0; i < divisors.length; i++) {
+    const value = milli / divisors[i];
+    if (value >= 1.0) return '' + Math.floor(value) + units[i];
+  }
+
+  return 'now';
+}
+
+/**
+ * 随机输出一个整数
+ */
+export function randomInt(a: number = 1, b: number = 0) {
+  const lower = Math.ceil(Math.min(a, b));
+  const upper = Math.floor(Math.max(a, b));
+
+  return Math.floor(lower + Math.random() * (upper - lower + 1));
 }

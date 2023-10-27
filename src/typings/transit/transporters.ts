@@ -4,6 +4,7 @@ import Packet from '@/lib/packets';
 
 export class Transporter {
   public hasBuiltInBalancer: boolean = false;
+  public connected: boolean = false;
   constructor(opts?: GenericObject) {}
 
   init(

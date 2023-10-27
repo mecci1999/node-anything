@@ -258,4 +258,12 @@ export default class BaseDiscoverer {
   public sendLocalNodeInfo(nodeID?: string) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * 禁止使用心跳
+   */
+  public disableHeartbeat() {
+    this.options.heartbeatInverval = 0;
+    this.stopHeartbeatTimers();
+  }
 }

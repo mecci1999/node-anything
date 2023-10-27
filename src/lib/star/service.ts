@@ -170,17 +170,35 @@ export default class Service<S = ServiceSettingSchema> {
     } else if (Array.isArray(this.schema?.created)) {
       this.schema?.created.forEach((fn) => fn.call(this));
     }
+    // 加载本地服务
     this.star.addLocalService(this as any);
+    // 调用中间件
     this.star.callMiddlewareHookSync('serviceCreated', [this]);
+    // 日志
     this.logger?.debug(`Service '${this.fullName}' created.`);
   }
 
   /**
-   * 开始服务
+   * 启动服务
    */
   public _start() {
     this.logger?.debug(`Service '${this.fullName}' is starting...`);
-    return Promise.resolve().then(() => {});
+    return Promise.resolve().then(() => {
+      // 调用中间件
+      return this.star.callMiddlewareHook('serviceStarting', [this]);
+    }).then(() => {
+      // 等待依赖的服务
+      if(this.schema?.dependencies) {
+        return this.waitForServices()
+      }
+    });
+  }
+
+  /**
+   * 停止服务
+   */
+  public _stop() {
+    this.logger?.debug(`Service '${this.fullName}' is stopping...`);
   }
 
   /**
@@ -343,4 +361,11 @@ export default class Service<S = ServiceSettingSchema> {
 
     return target;
   }
-}
+
+  /**
+   * 等待其他的服务
+   */
+  public waitForServices(serviceNames: string | string[], timeout: number, interval:number) {
+    return this.star.waitForServices()
+  }
+ }
