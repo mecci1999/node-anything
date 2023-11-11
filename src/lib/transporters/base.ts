@@ -25,6 +25,12 @@ export default class BaseTransporter {
     this.hasBuiltInBalancer = false;
   }
 
+  /**
+   * 初始化
+   * @param transit
+   * @param messageHandler
+   * @param afterConnect
+   */
   public init(
     transit: Transit,
     messageHandler: (cmd: string, msg: Packet) => any,

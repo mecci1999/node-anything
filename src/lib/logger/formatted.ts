@@ -104,7 +104,6 @@ export default class FormattedLogger extends BaseLogger {
     return 'grey';
   }
 
-  // 增加间距
   public padLeft(len: number) {
     if (this.options.autoPadding) return ' '.repeat(this.maxPrefixLength - len);
 

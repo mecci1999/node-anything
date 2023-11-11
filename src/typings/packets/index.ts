@@ -28,4 +28,8 @@ export interface PacketPayload {
   event?: any;
   action?: any;
   groups?: any;
+  host?: string; // 主机名
+  port?: number; // 端口
+  online?: any;
+  offline?: any;
 }
