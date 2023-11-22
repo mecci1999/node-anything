@@ -13,18 +13,18 @@ import { Registry } from '../registry';
 import Node from '../registry/node';
 import C from '../star/constants';
 import Context from '../context';
-import { QueueIsFullError, RequestRejectedError } from '../error/custom';
+import { QueueIsFullError, RequestRejectedError, ServiceNotAvailableError } from '../error/custom';
 import _ from 'lodash';
 
 export default class Transit {
   public star: Star;
   public Promise: PromiseConstructorLike | null = null;
-  public logger: LoggerInstance;
-  public nodeID: string;
+  public logger: LoggerInstance; // 日志模块
+  public nodeID: string; // 节点ID
   public instanceID: string;
-  public transporter: Transporter;
+  public transporter: Transporter; // 通信模块
   public options: StarTransitOptions | undefined;
-  public discoverer: Discoverer | null;
+  public discoverer: Discoverer | null; // 服务发现模块
   public errorRegenerator: Regenerator | null;
   public pendingRequests: Map<string, TransitRequest>;
   public pendingReqStreams: Map<string, any>;
@@ -289,8 +289,86 @@ export default class Transit {
         }
       }
 
+      // Request
       if (cmd === PacketTypes.PACKET_REQUEST) {
-        return;
+        return this.requestHandler(payload);
+      }
+
+      // Response
+      else if (cmd === PacketTypes.PACKET_RESPONSE) {
+        this.responseHandler(payload);
+      }
+
+      // Event
+      else if (cmd === PacketTypes.PACKET_EVENT) {
+        return this.eventHandler(payload);
+      }
+
+      // Discover
+      else if (cmd === PacketTypes.PACKET_DISCOVER) {
+        this.discoverer?.sendLocalNodeInfo(payload.sender || this.nodeID);
+      }
+
+      // Node Info
+      else if (cmd === PacketTypes.PACKET_INFO) {
+        this.discoverer?.processRemoteNodeInfo(payload.sender, payload);
+      }
+
+      // Disconnect
+      else if (cmd === PacketTypes.PACKET_DISCONNECT) {
+        this.discoverer?.remoteNodeDisconnected(payload.sender, false);
+      }
+
+      // Heartbeat
+      else if (cmd === PacketTypes.PACKET_HEARTBEAT) {
+        this.discoverer?.heartbeatReceived(payload.sender, payload);
+      }
+
+      // Ping
+      else if (cmd === PacketTypes.PACKET_PING) {
+        this.sendPing(payload);
+      }
+
+      // Pong
+      else if (cmd === PacketTypes.PACKET_PONG) {
+        this.sendPong(payload);
+      }
+
+      return Promise.resolve(true);
+    } catch (error) {
+      // 日志
+      this.logger.error(error, cmd, msg);
+      // 广播通知所有的节点
+      this.star.broadcastLocal('$transit.error', {
+        error,
+        module: 'transit',
+        type: C.FAILED_PROCESSING_PACKET
+      });
+    }
+  }
+
+  /**
+   * 请求处理器
+   */
+  private requestHandler(payload: GenericObject): Promise<any> {
+    const requestID = payload.requestID ? `with requestID ' ${payload.requestID} '` : '';
+    this.logger.debug(`<= Request '${payload.action}' ${requestID} received from '${payload.sender}' node.`);
+
+    try {
+      if (this.star.stopping) {
+        // 如果star状态是停止
+        this.logger.warn(
+          `Incoming '${payload.action}' ${requestID} request from '${payload.sender}' node is dropped because star is stopped.`
+        );
+        // 抛出错误
+        throw new ServiceNotAvailableError({ action: payload.action, nodeID: this.nodeID });
+      }
+
+      let pass: any;
+      if (payload.stream !== undefined) {
+        // 如果请求中存在流，调用处理请求流的方法
+        pass = this._handleIncomingRequestStream(payload);
+        if (pass === null) return Promise.resolve();
       }
     } catch (error) {}
   }
@@ -298,7 +376,7 @@ export default class Transit {
   /**
    * 向节点发送ping请求，不传nodeID则向所有的node节点发送ping请求
    */
-  public sendPing(nodeID?: string, id?: string) {
+  private sendPing(nodeID?: string, id?: string) {
     const packet = new Packet(PacketTypes.PACKET_PING, nodeID, {
       time: Date.now(),
       id: id || this.star.generateUid()
@@ -310,7 +388,7 @@ export default class Transit {
   /**
    * 发送pong响应结果
    */
-  public sendPong(payload: GenericObject) {
+  private sendPong(payload: GenericObject) {
     const packet = new Packet(PacketTypes.PACKET_PONG, payload.sender, {
       time: payload.time,
       id: payload.id,
@@ -643,5 +721,93 @@ export default class Transit {
         type: C.FAILED_SEND_INFO_PACKET
       });
     });
+  }
+
+  /**
+   * 处理请求中的流
+   */
+  private _handleIncomingRequestStream(payload: GenericObject): Stream | boolean | null {
+    // 先查看请求流中是否存在
+    let pass = this.pendingReqStreams.get(payload.id);
+    let isNew = false;
+
+    if (!payload.stream && !pass && !payload.seq) {
+      // 不是流数据
+      return false;
+    }
+
+    if (!pass) {
+      // 不存在
+      isNew = true;
+      this.logger.info(`<= New stream is received from '${payload.sender}'. Seq: ${payload?.seq}`);
+
+      // 创建一个新的流
+      pass = new Transform({
+        objectMode: payload.meta && payload.meta['$streamObjectMode'],
+        transform: function (chunk: any, encoding: BufferEncoding, done) {
+          this.push(chunk);
+
+          return done();
+        }
+      });
+
+      pass.$prevSeq = -1;
+      pass.$pool = new Map();
+
+      this.pendingReqStreams.set(payload.id, pass);
+    }
+
+    if (payload.seq > pass.$prevSeq + 1) {
+      this.logger.debug(`Put the chunk into pool (size: ${pass.$pool.size}). Seq: ${payload.seq}`);
+
+      pass.$pool.set(payload.seq, payload);
+
+      return null;
+    }
+
+    pass.$prevSeq = payload.seq;
+
+    if (pass.$prevSeq > 0) {
+      if (!payload.stream) {
+        // 检查流错误
+        if (payload.meta && payload.meta['$streamError']) {
+          pass.emit('error', this._createErrorFromPayload(payload.meta['$streamError'], payload));
+        }
+
+        this.logger.debug(`<= Stream closing is received from '${payload.sender}'. Seq: ${payload.seq}`);
+
+        // 结束
+        pass.end();
+
+        // 从请求队列中清除
+        this.pendingReqStreams.delete(payload.id);
+
+        return null;
+      } else {
+        this.logger.debug(`<= Stream chunk is received from '${payload.sender}'. Seq: ${payload.seq}`);
+
+        pass.write(payload.params.type === 'Buffer' ? Buffer.from(payload.params.data) : payload.params);
+      }
+    }
+
+    // 检查池子中是否还有流
+    if (pass.$pool.size > 0) {
+      this.logger.debug(`Has stored packets. Size: ${pass.$pool.size}`);
+      const nextSeq = pass.$prevSeq + 1;
+      const nextPacket = pass.$pool.get(nextSeq);
+      if (nextPacket) {
+        pass.$pool.delete(nextSeq);
+        setImmediate(() => this.requestHandler(nextPacket));
+      }
+    }
+
+    return pass && payload.seq === 0 ? pass : null;
+  }
+
+  /**
+   * 创建一个错误的实例
+   */
+  private _createErrorFromPayload(error, payload) {
+    return this.errorRegenerator?.restore(error, payload);
   }
 }
