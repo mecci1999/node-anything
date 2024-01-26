@@ -1,6 +1,6 @@
 import { GenericObject } from '@/typings';
 import { Registry } from '../registry';
-import { Star } from '../star';
+import Star from '../star';
 import BaseStrategy from './base';
 import Context from '../context';
 import Endpoint from '../registry/endpoint/item';

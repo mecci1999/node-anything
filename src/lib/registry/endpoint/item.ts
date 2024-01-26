@@ -1,5 +1,5 @@
-import { Star } from '@/lib/star';
-import { Registry } from '../registry';
+import Star from '@/lib/star';
+import Registry from '../registry';
 import Node from '../node';
 import { ActionSchema } from '@/typings/context';
 import { EventSchema } from '@/typings/context/event';

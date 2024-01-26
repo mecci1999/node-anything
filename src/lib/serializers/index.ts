@@ -2,14 +2,12 @@ import { isObject, isString, isInheritedClass } from '@/utils';
 import BaseSerializer from './base';
 import { StarOptionsError } from '../error';
 import JSONSerializer from './json';
-import MsgPackSerializer from './msgpack';
 import CborSerializer from './cbor';
 import NotePackSerializer from './notepack';
 
 const Serializers = {
   Base: BaseSerializer,
   JSON: JSONSerializer,
-  MsgPack: MsgPackSerializer,
   Cbor: CborSerializer,
   NotePack: NotePackSerializer
 };
@@ -33,10 +31,14 @@ function resolve(options: object | string) {
     if (SerializerClass) return new SerializerClass();
   } else if (isObject(options)) {
     let SerializerClass = getByName((options as any).type || 'JSON');
-    if (SerializerClass) return new SerializerClass((options as any).options);
-  } else {
-    throw new StarOptionsError(`Invalid serializer type ${(options as any).type}.`, { type: (options as any).type });
+    if (SerializerClass) {
+      return new SerializerClass((options as any).options);
+    } else {
+      throw new StarOptionsError(`Invalid serializer type ${(options as any).type}.`, { type: (options as any).type });
+    }
   }
+
+  return new Serializers.JSON();
 }
 
 function register(name: string, value: any) {

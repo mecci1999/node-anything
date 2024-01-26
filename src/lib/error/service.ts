@@ -15,7 +15,7 @@ import {
   UniverseRetryableError,
   ValidationError
 } from './custom';
-import { Star } from '../star';
+import Star from '../star';
 import { GenericObject } from '@/typings';
 
 export function recreateError(error: UniversePlainError) {

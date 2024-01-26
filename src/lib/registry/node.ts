@@ -1,10 +1,11 @@
 import { GenericObject } from '@/typings';
 import _ from 'lodash';
+import { UniverseError } from '../error';
 
 export default class Node {
   public id: string;
   public instanceID: string | null;
-  public available: boolean; // 是否可靠
+  public available: boolean; // 状态是否正常
   public local: boolean;
   public lastHeartbeatTime: number; // 最近一次心跳运行时间
   public config: GenericObject; // 配置项
@@ -66,7 +67,10 @@ export default class Node {
    * 更新节点回调
    */
   public updateLocalInfo(cpuUsage: any): Promise<any> {
-    if (!cpuUsage) return Promise.reject();
+    if (!cpuUsage) {
+      return Promise.reject(new UniverseError('registry module unpdateLocalInfo error, cpuUsage is not function.'));
+    }
+
     return cpuUsage()
       .then((res) => {
         const newVal = Math.round(res.avg);

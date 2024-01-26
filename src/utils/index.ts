@@ -6,6 +6,12 @@ import fs from 'fs';
 import os from 'os';
 import BaseError from '@/lib/error/base';
 import kleur from 'kleur';
+import { promiseAllControl } from './promiseAllControl';
+import { sleep } from './sleep';
+import { getMilliseconds } from './getMilliseconds';
+import { promiseMethod } from './promiseMethod';
+import { functionArguments } from './functionArguments';
+import { isNewSignature } from './isNewSignature';
 
 const RegexCache = new Map();
 
@@ -42,7 +48,6 @@ export function isPlainObject(o) {
 }
 
 /**
- * Get the name of constructor of an object.
  * 获取一个对象参数的构造方法名
  *
  * @param {Object} obj
@@ -62,7 +67,6 @@ export function getConstructorName(obj: any): string | undefined {
 }
 
 /**
- * Check whether the instance is an instance of the given class.
  * 检查一个实例参数是否是另一个类生成的实例对象
  *
  * @param {Object} instance
@@ -442,3 +446,12 @@ export function randomInt(a: number = 1, b: number = 0) {
 
   return Math.floor(lower + Math.random() * (upper - lower + 1));
 }
+
+/**
+ * 判断是否是一个日期
+ */
+export function isDate(date: any) {
+  return date instanceof Date && !Number.isNaN(date.getTime());
+}
+
+export { promiseAllControl, sleep, getMilliseconds, promiseMethod, functionArguments, isNewSignature };

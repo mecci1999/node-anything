@@ -1,6 +1,6 @@
 import { isFunction, isString, match } from '@/utils';
 import Context from '../context';
-import { Star } from '../star';
+import Star from '../star';
 import _ from 'lodash';
 
 export function actionHookMiddleware(star: Star) {

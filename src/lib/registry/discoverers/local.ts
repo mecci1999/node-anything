@@ -38,6 +38,7 @@ export default class LocalDiscoverer extends BaseDiscoverer {
   public sendLocalNodeInfo(nodeID?: string) {
     if (!this.transit) return Promise.resolve();
 
+    // 获取自身节点的数据
     const info = this.star?.getLocalNodeInfo();
     if (!info) return Promise.resolve();
 
@@ -46,6 +47,7 @@ export default class LocalDiscoverer extends BaseDiscoverer {
         ? this.transit.transporter.makeBalancedSubscriptions()
         : Promise.resolve();
 
+    // 发送给对应的节点
     return p.then(() => this.transit?.sendNodeInfo(info, nodeID || ''));
   }
 }

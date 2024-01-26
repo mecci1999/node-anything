@@ -42,8 +42,16 @@ export default class Etcd3Discoverer extends BaseDiscoverer {
   public init(registry: Registry): void {
     super.init(registry);
 
-    if(!Etcd3) {
-      
+    if (!Etcd3) {
+      this.star?.fatal(
+        `The 'etcd3' package is missing. Please install it with 'npm install etcd3 --save' command.`,
+        null,
+        true
+      );
     }
+
+    this.logger?.warn(kleur.yellow().bold('Etcd3 Discoverer is an experimental module. DO NOT use it in production!'));
+
+    this.client = new Etcd3(this.options.etcd);
   }
 }

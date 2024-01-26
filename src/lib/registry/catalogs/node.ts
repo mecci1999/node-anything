@@ -1,5 +1,5 @@
-import { Star } from '@/lib/star';
-import { Registry } from '../registry';
+import Star from '@/lib/star';
+import Registry from '../registry';
 import { LoggerInstance } from '@/typings/logger';
 import Node from '../node';
 import { getIpList } from '@/utils';
@@ -175,6 +175,7 @@ export default class NodeCatalog {
     let list: Omit<Node, 'rawInfo' | 'services'>[] = [];
     this.nodes.forEach((node) => {
       if (onlyAvaiable && !node.available) return;
+
       if (withServices) {
         list.push(_.omit(node, ['rawInfo']));
       } else {

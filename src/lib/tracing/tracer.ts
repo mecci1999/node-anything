@@ -1,3 +1,1 @@
-export default class Tracer {
-  
-}
+export default class Tracer {}

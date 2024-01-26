@@ -1,8 +1,9 @@
 import { LogLevelConfig, LoggerBindings } from '@/typings/logger';
-import { Star } from '../star';
+import Star from '../star';
 import Loggers from '../logger/index';
 import _ from 'lodash';
 import { isPlainObject, isString } from '@/utils';
+import { LEVELS } from './base';
 
 const noop = () => {};
 const cwd = process.cwd();
@@ -29,6 +30,7 @@ export class LoggerFactory {
   init(options: LogLevelConfig | LogLevelConfig[] | boolean | null) {
     this.options = options;
     const globalLogLevel = this.star.options.logLevel || 'info';
+
     if (options === false || options === null) {
       // 没有日志
       this.appenders = [];
@@ -102,23 +104,27 @@ export class LoggerFactory {
     logger = {};
     const star = this.star;
     const appenders = this.appenders;
+
+    // 获取日志处理方法
     const logHandlers = _.compact(appenders.map((app) => app.getLogHandler(bindings)));
+
     // 服务是否拥有中间件
-    // const hasNewLogEntryMiddleware =
-    // 	star.middlewares && star.middlewares.registeredHooks.newLogEntry;
+    const hasNewLogEntryMiddleware = star.middlewares && star.middlewares.registeredHooks.newLogEntry;
 
-    // Loggers.LEVELS.forEach(type => {
-    // 	if (logHandlers.length == 0 && !hasNewLogEntryMiddleware) return (logger[type] = noop);
+    LEVELS.forEach((type) => {
+      if (logHandlers.length == 0 && !hasNewLogEntryMiddleware) return (logger[type] = noop);
 
-    // 	logger[type] = function (...args) {
-    // 		if (hasNewLogEntryMiddleware)
-    // 			broker.middlewares.callSyncHandlers("newLogEntry", [type, args, bindings], {});
+      logger[type] = function (...args) {
+        if (hasNewLogEntryMiddleware)
+          star.middlewares && star.middlewares?.callSyncHandlers('newLogEntry', [type, args, bindings], {});
 
-    // 		if (logHandlers.length == 0) return;
+        if (logHandlers.length == 0) return;
 
-    // 		for (let i = 0; i < logHandlers.length; i++) logHandlers[i](type, args);
-    // 	};
-    // });
+        for (let i = 0; i < logHandlers.length; i++) {
+          logHandlers[i](type, args);
+        }
+      };
+    });
 
     /*logger.log = function(type, ...args) {
 			if (broker.middlewares)
@@ -130,6 +136,7 @@ export class LoggerFactory {
 		};*/
 
     logger.appenders = appenders;
+
     this.cache.set(this.getBindingsKey(bindings), logger);
 
     return logger;

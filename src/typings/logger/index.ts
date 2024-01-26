@@ -5,8 +5,8 @@ export enum BaseLoggerLevels {
   fatal = 'fatal', // 崩溃
   error = 'error', // 错误
   warn = 'warn', // 警告
-  info = 'info', // 信息
   debug = 'debug', // debug
+  info = 'info', // 信息
   trace = 'trace' // 跟踪
 }
 

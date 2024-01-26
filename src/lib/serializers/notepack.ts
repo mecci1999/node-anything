@@ -1,5 +1,5 @@
 import { GenericObject } from '@/typings';
-import { Star } from '../star';
+import Star from '../star';
 import BaseSerializer from './base';
 import notepack from 'notepack.io';
 

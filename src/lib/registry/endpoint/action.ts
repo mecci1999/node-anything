@@ -1,5 +1,5 @@
-import { Star } from '@/lib/star';
-import { Registry } from '../registry';
+import Star from '@/lib/star';
+import Registry from '../registry';
 import Endpoint from './item';
 import Node from '../node';
 import ServiceItem from '../service-item';

@@ -7,6 +7,7 @@ import { BaseLoggerLevels } from '@/typings/logger';
 import { GenericObject } from '@/typings';
 import { LoggerFactory } from './factory';
 import { FormattedLoggerOptions } from '@/typings/logger/index';
+import { getMilliseconds } from '@/utils';
 
 export function getColor(type: BaseLoggerLevels) {
   switch (type) {
@@ -36,14 +37,13 @@ export default class FormattedLogger extends BaseLogger {
   constructor(options: GenericObject | FormattedLoggerOptions) {
     super(options);
 
-    this.options = _.defaultsDeep(this.options, {
+    this.options = _.defaultsDeep(this.options, options, {
       colors: true,
       moduleColors: false,
       formatter: 'full',
       objectPrinter: null,
       autoPadding: false
     });
-
     this.maxPrefixLength = 0;
   }
 
@@ -139,8 +139,9 @@ export default class FormattedLogger extends BaseLogger {
     } else if (formatter === 'jsonext') {
       // {"time":"2020-02-09T10:44:35.285Z","level":"info","message":"Universe is creating...","nodeID":"console","namespace":"","mod":"broker"}
       return (type: BaseLoggerLevels, args: any) => {
+        const timestamp = `${new Date().toLocaleString('zh-CN', { hour12: false })}:${getMilliseconds()}`;
         const res = {
-          time: new Date().toISOString(),
+          time: timestamp,
           level: type,
           message: '',
           ...bindings
@@ -173,8 +174,9 @@ export default class FormattedLogger extends BaseLogger {
       // [2019-08-31T08:40:53.481Z] INFO STAR: Universe is creating...
       const prefixLen = 35 + bindings.nodeID.length + bindings.mod.length;
       this.maxPrefixLength = Math.max(prefixLen, this.maxPrefixLength);
+
       return (type: BaseLoggerLevels, args: any) => [
-        kleur.grey(`[${new Date().toDateString()}]`),
+        kleur.grey(`[${new Date().toLocaleString('zh-CN', { hour12: false })}:${getMilliseconds()}]`),
         this.levelColorStr[type],
         modColorName + this.padLeft(prefixLen) + kleur.grey(':'),
         ...printArgs(args)
@@ -182,7 +184,8 @@ export default class FormattedLogger extends BaseLogger {
     } else {
       // [{timestamp}] {level} {nodeID}/{mod}: {msg}
       return (type: BaseLoggerLevels, args: any) => {
-        const timestamp = new Date().toISOString();
+        const timestamp = `${new Date().toLocaleString('zh-CN', { hour12: false })}:${getMilliseconds()}`;
+
         return [
           this.render(formatter, {
             timestamp: kleur.grey(timestamp),

@@ -1,5 +1,5 @@
 import { LoggerInstance } from '@/typings/logger';
-import { Star } from '../star';
+import Star from '../star';
 import { GenericObject } from '@/typings';
 import Discoverers from './discoverers';
 import Node from './node';
@@ -15,13 +15,16 @@ import _ from 'lodash';
 import ServiceItem from './service-item';
 import { safetyObject } from '@/utils';
 import ActionEndpoint from './endpoint/action';
+import { METRIC, MetricRegistry } from '../metrics';
+import kleur from 'kleur';
 
 /**
  * 服务注册模块
  */
-export class Registry {
+export default class Registry {
   public star: Star;
   public logger: LoggerInstance;
+  public metrics: MetricRegistry | null;
   public StrategyFactory: typeof BaseStrategy;
   public discoverer: Discoverer;
   public options: GenericObject;
@@ -33,6 +36,7 @@ export class Registry {
 
   constructor(star: Star) {
     this.star = star;
+    this.metrics = star.metrics;
     this.logger = star.getLogger('registry');
 
     this.options = Object.assign({}, star.options.registry);
@@ -55,12 +59,25 @@ export class Registry {
     // 注册性能指标服务
     this.registerUniverseMetrics();
     this.updateMetrics();
+
+    // 每隔一分钟，打印当前节点注册表中的所有信息
+    setInterval(() => {
+      // 输出注册的节点信息
+      const nodes = this.getNodeList({ onlyAvaiable: false, withServices: false }).map((item) => {
+        return {
+          key: item.id,
+          value: item.available
+        };
+      });
+      this.logger.debug(`---------- 注册的节点表 -----------`);
+      this.printLogger('节点ID', nodes);
+    }, 30 * 1000);
   }
 
   /**
    * 初始化
    */
-  public init() {
+  public init(star: Star) {
     this.discoverer.init(this);
   }
 
@@ -74,12 +91,101 @@ export class Registry {
   /**
    * 注册性能指标模块
    */
-  private registerUniverseMetrics() {}
+  private registerUniverseMetrics() {
+    if (!this.star.isMetricsEnabled()) return;
+
+    this.metrics?.register({
+      name: METRIC.UNIVERSE_REGISTRY_NODES_TOTAL,
+      type: METRIC.TYPE_GAUGE,
+      description: '注册的节点总数量（包括掉线、状态异常的节点）'
+    });
+
+    this.metrics?.register({
+      name: METRIC.UNIVERSE_REGISTRY_NODES_ONLINE_TOTAL,
+      type: METRIC.TYPE_GAUGE,
+      description: '注册的节点正在运行的数量'
+    });
+
+    this.metrics?.register({
+      name: METRIC.UNIVERSE_REGISTRY_SERVICES_TOTAL,
+      type: METRIC.TYPE_GAUGE,
+      description: '注册的服务总数量'
+    });
+
+    this.metrics?.register({
+      name: METRIC.UNIVERSE_REGISTRY_SERVICE_ENDPOINTS_TOTAL,
+      type: METRIC.TYPE_GAUGE,
+      labelNames: ['service'],
+      description: '注册的服务节点总数量'
+    });
+
+    this.metrics?.register({
+      name: METRIC.UNIVERSE_REGISTRY_ACTIONS_TOTAL,
+      type: METRIC.TYPE_GAUGE,
+      description: '注册的动作总数量'
+    });
+
+    this.metrics?.register({
+      name: METRIC.UNIVERSE_REGISTRY_ACTION_ENDPOINTS_TOTAL,
+      type: METRIC.TYPE_GAUGE,
+      labelNames: ['action'],
+      description: '注册的动作节点总数量'
+    });
+
+    this.metrics?.register({
+      name: METRIC.UNIVERSE_REGISTRY_EVENTS_TOTAL,
+      type: METRIC.TYPE_GAUGE,
+      description: '注册的事件总数量'
+    });
+
+    this.metrics?.register({
+      name: METRIC.UNIVERSE_REGISTRY_EVENT_ENDPOINTS_TOTAL,
+      type: METRIC.TYPE_GAUGE,
+      labelNames: ['event'],
+      description: '注册的事件节点总数量'
+    });
+  }
 
   /**
    * 更新性能指标模块
    */
-  private updateMetrics() {}
+  private updateMetrics() {
+    if (!this.star.isMetricsEnabled()) return;
+
+    this.metrics?.set(METRIC.UNIVERSE_REGISTRY_NODES_TOTAL, this.nodes.count());
+    this.metrics?.set(METRIC.UNIVERSE_REGISTRY_NODES_ONLINE_TOTAL, this.nodes.onlineCount());
+
+    const services = this.services.list({
+      grouping: true,
+      onlyLocal: true,
+      onlyAvaliable: false,
+      skipInterval: false,
+      withActions: false,
+      withEvents: false
+    });
+    this.metrics?.set(METRIC.UNIVERSE_REGISTRY_SERVICES_TOTAL, services.length);
+    services.forEach((service) =>
+      this.metrics?.set(METRIC.UNIVERSE_REGISTRY_SERVICE_ENDPOINTS_TOTAL, service.nodes ? service.node.length : 0, {
+        service: service.fullName
+      })
+    );
+
+    const actions = this.actions.list({ withEndpoints: true });
+    this.metrics?.set(METRIC.UNIVERSE_REGISTRY_ACTIONS_TOTAL, actions.length);
+    actions.forEach((item) =>
+      this.metrics?.set(METRIC.UNIVERSE_REGISTRY_ACTION_ENDPOINTS_TOTAL, item.endpoints ? item.endpoints.length : 0, {
+        action: item.name
+      })
+    );
+
+    const events = this.events.list({ withEndpoints: true });
+    this.metrics?.set(METRIC.UNIVERSE_REGISTRY_EVENTS_TOTAL, events.length);
+    events.forEach((item) =>
+      this.metrics?.set(METRIC.UNIVERSE_REGISTRY_EVENT_ENDPOINTS_TOTAL, item.endpoints ? item.endpoints.length : 0, {
+        event: item.name
+      })
+    );
+  }
 
   /**
    * 注册动作
@@ -285,11 +391,13 @@ export class Registry {
     if (incSeq && node?.seq) node.seq++;
 
     const rawInfo = _.pick(node, ['ipList', 'hostname', 'instanceID', 'client', 'config', 'port', 'seq', 'metadata']);
+
     if (!isStopping && (this.star.started || incSeq)) {
       rawInfo.services = this.services.getLocalNodeServices();
     } else {
       rawInfo.services = [];
     }
+
     if (!node?.rawInfo) return;
     node.rawInfo = safetyObject(rawInfo, this.star.options);
 
@@ -304,6 +412,7 @@ export class Registry {
       const res = this.regenerateLocalRawInfo(this.localNodeInfoInvalidated == 'seq');
       this.logger.debug('Local Node info regenerated.');
       this.localNodeInfoInvalidated = false;
+
       return res;
     }
 
@@ -333,7 +442,7 @@ export class Registry {
   /**
    * 检查某个服务是否存在
    */
-  public hasService(fullName: string, nodeID: string) {
+  public hasService(fullName: string, nodeID?: string) {
     return this.services.has(fullName, nodeID);
   }
 
@@ -403,5 +512,33 @@ export class Registry {
    */
   public getNodeRawList() {
     return this.nodes.toArray().map((node) => node.rawInfo);
+  }
+
+  /**
+   * 打印函数
+   */
+  public printLogger(name: string, results: Array<{ key?: string; value?: any }>) {
+    this.logger.debug(kleur.green(` ------------------------------ `));
+    this.logger.debug(kleur.green(`|    ${name}    |     状态      |`));
+    this.logger.debug(kleur.green(` ------------------------------ `));
+
+    results.forEach((item) => {
+      let keyText = '';
+      let valueText = '';
+      for (let i = 0; i < 14 - (item.key?.length || 0); i++) {
+        keyText = keyText + ` `;
+      }
+      for (let i = 0; i < 13 - (item.value?.length || 0); i++) {
+        valueText = valueText + ` `;
+      }
+      keyText = keyText + '|';
+      valueText = valueText + '|';
+      this.logger.debug(kleur.green(`|              |               |`));
+      this.logger.debug(
+        kleur.green(`|${item.key}`) + kleur.green(keyText) + kleur.green(item.value) + kleur.green(valueText)
+      );
+      this.logger.debug(kleur.green(`|              |               |`));
+      this.logger.debug(kleur.green(` ------------------------------ `));
+    });
   }
 }

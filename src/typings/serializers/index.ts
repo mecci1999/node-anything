@@ -1,4 +1,4 @@
-import { Star } from '@/lib/star';
+import Star from '@/lib/star';
 import { GenericObject } from '..';
 
 export class Serialize {

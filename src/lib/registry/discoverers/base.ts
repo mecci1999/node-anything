@@ -1,7 +1,7 @@
-import { Star } from '@/lib/star';
+import Star from '@/lib/star';
 import { DiscovererOptions } from '@/typings/registry/discoverers';
 import _ from 'lodash';
-import { Registry } from '../registry';
+import Registry from '../registry';
 import { LoggerInstance } from '@/typings/logger';
 import Transit from '@/lib/transit';
 import Node from '../node';
@@ -46,10 +46,11 @@ export default class BaseDiscoverer {
       this.logger = this.star.getLogger('Discovery');
       if (this.star.transit) this.transit = this.star.transit;
 
-      if (this.options.heartbeatInverval === null) {
-        this.options.heartbeatInverval = this.star.options.heartbeatInterval || 5 * 60;
+      if (!this.options.heartbeatInterval) {
+        this.options.heartbeatInterval = this.star.options.heartbeatInterval || 5 * 60;
       }
-      if (this.options.heartbeatTimeout === null) {
+
+      if (!this.options.heartbeatTimeout) {
         this.options.heartbeatTimeout = this.star.options.heartbeatTimeout || 5 * 60;
       }
     }
@@ -71,9 +72,9 @@ export default class BaseDiscoverer {
     // 停止当前的所有心跳
     this.stopHeartbeatTimers();
 
-    if (this.options.heartbeatInverval && this.options.heartbeatInverval > 0) {
+    if (this.options.heartbeatInterval && this.options.heartbeatInterval > 0) {
       // 心跳触发时间，random +/- 500ms
-      const time = this.options.heartbeatInverval * 1000 + (Math.round(Math.random() * 1000) - 500);
+      const time = this.options.heartbeatInterval * 1000 + (Math.round(Math.random() * 1000) - 500);
       // 心跳定时器
       this.heartbeatTimer = setInterval(() => this.beat(), time);
       this.heartbeatTimer.unref();
@@ -131,7 +132,7 @@ export default class BaseDiscoverer {
   public beat() {
     if (this.localNode) {
       // 检查节点cpu使用状态
-      return this.localNode.updateLocalInfo(this.star?.getCpuUsage()).then(() => this.sendHeartbeat());
+      return this.localNode.updateLocalInfo(this.star?.getCpuUsage).then(() => this.sendHeartbeat());
     }
   }
 
@@ -140,6 +141,7 @@ export default class BaseDiscoverer {
    */
   public checkRemoteNodes() {
     if (this.options.disableHeartbeatChecks) return;
+
     // 获取现在时间
     const now = Math.round(process.uptime());
     this.registry?.nodes.toArray().forEach((node) => {
@@ -184,7 +186,7 @@ export default class BaseDiscoverer {
    * 接收一个远程节点的心跳
    */
   public heartbeatReceived(nodeID: string, payload: any) {
-    // 获取注册的节点
+    // 从注册表中的节点中获取该节点
     const node = this.registry?.nodes.get(nodeID);
     if (node) {
       // 检查节点是否有效
@@ -203,6 +205,7 @@ export default class BaseDiscoverer {
         }
       }
     } else {
+      // 没有获取到该注册的节点，将该节点进行注册
       this.discoverNode(nodeID);
     }
   }
@@ -212,6 +215,7 @@ export default class BaseDiscoverer {
    */
   public sendHeartbeat() {
     if (!this.transit || !this.localNode) return Promise.resolve();
+
     return this.transit.sendHeartbeat(this.localNode);
   }
 
@@ -241,21 +245,21 @@ export default class BaseDiscoverer {
   /**
    * 发现节点的方法
    */
-  public discoverNode(nodeID?: string) {
+  public discoverNode(nodeID?: string): Promise<any> {
     throw new Error('Not implemented');
   }
 
   /**
    * 发现所有节点的方法
    */
-  public discoverAllNodes() {
+  public discoverAllNodes(): Promise<any> {
     throw new Error('Not implemented');
   }
 
   /**
    * 本地服务注册发生改变，需要通知远程节点
    */
-  public sendLocalNodeInfo(nodeID?: string) {
+  public sendLocalNodeInfo(nodeID?: string): Promise<any> {
     throw new Error('Not implemented');
   }
 
@@ -263,7 +267,7 @@ export default class BaseDiscoverer {
    * 禁止使用心跳
    */
   public disableHeartbeat() {
-    this.options.heartbeatInverval = 0;
+    this.options.heartbeatInterval = 0;
     this.stopHeartbeatTimers();
   }
 }

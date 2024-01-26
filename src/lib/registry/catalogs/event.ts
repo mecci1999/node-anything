@@ -1,5 +1,5 @@
-import { Star } from '@/lib/star';
-import { Registry } from '../registry';
+import Star from '@/lib/star';
+import Registry from '../registry';
 import BaseStrategy from '@/lib/strategies/base';
 import { LoggerInstance } from '@/typings/logger';
 import EndpointList from '../endpoint/list';
@@ -179,7 +179,7 @@ export default class EventCatalog {
   }
 
   public list(
-    options: { onlyLocal: boolean; onlyAvaliable: boolean; skipInterval: boolean; withEndpoints: boolean } = {
+    options: { onlyLocal?: boolean; onlyAvaliable?: boolean; skipInterval?: boolean; withEndpoints?: boolean } = {
       onlyLocal: false,
       onlyAvaliable: false,
       skipInterval: false,

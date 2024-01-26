@@ -3,7 +3,7 @@ import { StarDisconnectedError } from '../error';
 import Packet from '../packets';
 import { GenericObject } from '@/typings';
 import Transit from '../transit';
-import { Star } from '../star';
+import Star from '../star';
 import { LoggerInstance } from '@/typings/logger';
 import { PacketTypes } from '@/typings/packets';
 
@@ -16,8 +16,8 @@ export default class BaseTransporter {
   public nodeID: string = '';
   public logger: LoggerInstance | null = null;
   public prefix: string = '';
-  public messageHandler: (cmd: string, msg: Packet) => any = () => {};
-  public afterConnect: (wasReconnect: boolean) => any = () => {};
+  public messageHandler: ((cmd: string, msg: Packet) => any) | null = null;
+  public afterConnect: ((wasReconnect: boolean) => any) | null = null;
 
   constructor(options: GenericObject) {
     this.options = options;
@@ -199,7 +199,7 @@ export default class BaseTransporter {
 
     try {
       const packet = this.deserialize(cmd, msg);
-      return packet && this.messageHandler(cmd, packet);
+      return packet && this.messageHandler && this.messageHandler(cmd, packet);
     } catch (error) {
       this.logger?.warn('Invalid incoming packet. Type:', cmd, error);
       this.logger?.debug('Content:', msg.toString ? msg.toString() : msg);

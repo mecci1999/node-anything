@@ -1,5 +1,5 @@
-import { Star } from '@/lib/star';
-import { Registry } from '../registry';
+import Star from '@/lib/star';
+import Registry from '../registry';
 import { LoggerInstance } from '@/typings/logger';
 import Node from '../node';
 import ServiceItem from '../service-item';
@@ -26,7 +26,7 @@ export default class ServiceCatalog {
     return item;
   }
 
-  public has(fullName: string, nodeID: string) {
+  public has(fullName: string, nodeID?: string) {
     return this.services.findIndex((service) => service.equals(fullName, nodeID)) !== -1;
   }
 
@@ -36,12 +36,12 @@ export default class ServiceCatalog {
 
   public list(
     options: {
-      onlyLocal: boolean;
-      onlyAvaliable: boolean;
-      skipInterval: boolean;
-      withActions: boolean;
-      withEvents: boolean;
-      grouping: boolean;
+      onlyLocal?: boolean;
+      onlyAvaliable?: boolean;
+      skipInterval?: boolean;
+      withActions?: boolean;
+      withEvents?: boolean;
+      grouping?: boolean;
     } = {
       onlyLocal: false,
       onlyAvaliable: false,

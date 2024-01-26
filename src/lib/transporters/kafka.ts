@@ -3,6 +3,7 @@ import BaseTransporter from './base';
 import Kafka, { KafkaClient, Producer, ConsumerGroup } from 'kafka-node';
 import _ from 'lodash';
 import { PacketTypes } from '@/typings/packets';
+import C from '../star/constants';
 
 export default class KafkaTransporter extends BaseTransporter {
   public client: KafkaClient | null;
@@ -39,27 +40,26 @@ export default class KafkaTransporter extends BaseTransporter {
    */
   public connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      let kafka;
-      try {
-        kafka = require('kafka-node');
-      } catch (error) {
-        this.star?.fatal(
-          'The kafka-node package is missing.Please install it with npm install kafka-node --save command.'
-        );
-      }
-
+      // 创建kafka实例
       this.client = new Kafka.KafkaClient(this.options.client);
 
-      // 生产者
+      // 创建生产者
       this.producer = new Kafka.Producer(this.client, this.options.producer, this.options.customPartitioner);
+
       this.producer.on('ready', () => {
         this.logger?.info('Kafka client is connected.');
         this.onConnected().then(resolve);
       });
+
       this.producer.on('error', (error) => {
         this.logger?.error('Kafka Producer error', error.message);
         this.logger?.debug('Kafka Producer error', error);
-        // 广播错误，后续开发
+        // 广播错误
+        this.star?.broadcastLocal('$transporter.error', {
+          error,
+          module: 'transporter',
+          type: C.FAILED_PUBLISHER_ERROR
+        });
 
         if (!this.connected) reject(error);
       });
@@ -91,10 +91,16 @@ export default class KafkaTransporter extends BaseTransporter {
     const topicsMap = topics.map(({ cmd, nodeID }) => this.getTopicName(cmd, nodeID));
 
     return new Promise((resolve, reject) => {
+      // 生产者创建topic
       this.producer?.createTopics(topicsMap, true, (error) => {
         if (error) {
           this.logger?.error('Unable to create topics!', topics, error);
-          // 广播错误，后续开发
+          // 广播错误
+          this.star?.broadcastLocal('$transporter.error', {
+            error,
+            module: 'transporter',
+            type: C.FAILED_TOPIC_CREATION
+          });
 
           return reject(error);
         }
@@ -105,19 +111,25 @@ export default class KafkaTransporter extends BaseTransporter {
             id: 'default-kafka-consumer',
             kafkaHost: this.options.host,
             groupId: this.star?.instanceID,
-            fromOffset: 'lastest',
+            fromOffset: 'latest',
             encoding: 'buffer'
           },
           this.options.consumer
         );
 
+        // 创建消费者实例
         this.consumer = new Kafka.ConsumerGroup(consumerOptions, topicsMap);
 
         this.consumer.on('error', (error) => {
           this.logger?.error('Kafka Consumer error', error.message);
           this.logger?.debug('Kafka Consumer error', error);
 
-          // 广播错误，后续开发
+          // 广播错误
+          this.star?.broadcastLocal('$transporter.error', {
+            error,
+            module: 'transporter',
+            type: C.FAILED_CONSUMER_ERROR
+          });
 
           if (!this.connected) reject(error);
         });
@@ -128,7 +140,9 @@ export default class KafkaTransporter extends BaseTransporter {
           this.receive(cmd, message.value as Buffer);
         });
 
+        // 注意：这里如果一直在连接中，会导致进程一直卡在连接kafka中
         this.consumer.on('connect', () => {
+          this.logger?.info(`KAFKA 消费者连接成功!`);
           resolve();
         });
       });
@@ -155,7 +169,12 @@ export default class KafkaTransporter extends BaseTransporter {
           if (error) {
             this.logger?.error('Kafka Server Publish error', error);
 
-            // 广播报错，后续开发
+            // 广播错误
+            this.star?.broadcastLocal('$transporter.error', {
+              error,
+              module: 'transporter',
+              type: C.FAILED_PUBLISHER_ERROR
+            });
 
             reject(error);
           }

@@ -4,13 +4,16 @@ import { GenericObject } from '..';
 import { StarRegistryOptions } from '../registry';
 import { Serialize } from '../serializers';
 import { Transporter } from '../transit/transporters';
-import { Regenerator } from '@/lib/error';
+import { Regenerator, UniverseError } from '@/lib/error';
 import Context from '@/lib/context';
 import { StarTransitOptions } from '../transit';
 import Service from '@/lib/star/service';
 import { ServiceSchema } from '../service';
-import { Star } from '@/lib/star';
+import Star from '@/lib/star';
 import { Middleware } from '../middleware';
+import { Cacher } from '../cachers';
+import { MetricRegistryOptions } from '../metric';
+import BaseValidator from '@/lib/validators/base';
 
 /**
  * 配置项
@@ -58,10 +61,11 @@ export interface StarOptions {
 
   // bulkhead?: BulkheadOptions;
 
-  // cacher?: boolean | Cacher | string | GenericObject | null;
-  // validator?: boolean | BaseValidator | ValidatorNames | ValidatorOptions | null;
+  cacher?: boolean | Cacher | string | GenericObject | null;
 
-  // metrics?: boolean | MetricRegistryOptions;
+  validator?: boolean | BaseValidator | ValidatorNames | ValidatorOptions | null;
+
+  metrics?: boolean | MetricRegistryOptions;
   // tracing?: boolean | TracerOptions;
 
   internalServices?:
@@ -102,3 +106,48 @@ export interface HotReloadOptions {
 
 export type StarAsyncLifecyleHandler = (star: Star) => void;
 export type StarSyncLifecyleHandler = (star: Star) => void | Promise<void>;
+
+// ------ Call Action 的相关参数
+export type FallbackHandler = (ctx: Context, err: UniverseError) => Promise<any>;
+export type FallbackResponse = string | number | GenericObject;
+export type FallbackResponseHandler = (ctx: Context, err: UniverseError) => Promise<any>;
+
+export interface ContextParentSpan {
+  id: string;
+  traceID: string;
+  sampled: boolean;
+}
+
+export interface CallCallingOptions {
+  timeout?: number;
+  retries?: number;
+  fallbackResponse?: FallbackResponse | FallbackResponse[] | FallbackResponseHandler;
+  nodeID?: string;
+  meta?: GenericObject;
+  parentSpan?: ContextParentSpan;
+  parentCtx?: Context;
+  requestID?: string;
+  tracking?: boolean;
+  paramsCloning?: boolean;
+  caller?: string;
+}
+
+export interface MCallCallingOptions extends CallCallingOptions {
+  settled?: boolean;
+}
+
+export interface StarCallActionParams<P extends GenericObject = GenericObject> {
+  action: string;
+  params?: P;
+}
+
+export interface StarMCallActionParams<P extends GenericObject = GenericObject> extends StarCallActionParams {
+  options?: CallCallingOptions;
+}
+
+export interface ValidatorOptions {
+  type: string;
+  options?: GenericObject;
+}
+
+export type ValidatorNames = 'Fastest';

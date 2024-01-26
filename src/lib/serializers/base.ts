@@ -1,6 +1,6 @@
 import { PacketDataTypes, PacketTypes } from '@/typings/packets';
 import Packet from '../packets';
-import { Star } from '../star';
+import Star from '../star';
 import { GenericObject } from '@/typings';
 
 export default class BaseSerializer {

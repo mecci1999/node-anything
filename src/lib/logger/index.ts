@@ -13,7 +13,6 @@ import { PinoLogger } from './pino';
 export const Loggers = {
   BaseLogger,
   Formatted: FormattedLogger,
-
   Console: ConsoleLogger,
   File: FileLogger,
   Log4js: Log4jsLogger,

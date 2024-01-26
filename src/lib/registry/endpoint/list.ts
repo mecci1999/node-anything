@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import { Registry } from '../registry';
-import { Star } from '@/lib/star';
+import Registry from '../registry';
+import Star from '@/lib/star';
 import { GenericObject } from '@/typings';
 import { LoggerBindings, LoggerInstance } from '@/typings/logger';
 import Endpoint from './item';

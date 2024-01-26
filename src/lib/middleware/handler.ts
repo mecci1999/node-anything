@@ -1,5 +1,5 @@
 import { GenericObject } from '@/typings';
-import { Star } from '../star';
+import Star from '../star';
 import { Middleware } from '@/typings/middleware';
 import { isFunction, isObject, isString } from '@/utils';
 import _ from 'lodash';
@@ -97,7 +97,7 @@ export default class MiddlewareHandler {
    * @param options
    * @returns
    */
-  public callSyncHandles(method: string, args: Array<any>, options: { reverse?: boolean } = { reverse: false }) {
+  public callSyncHandlers(method: string, args: Array<any>, options: { reverse?: boolean } = { reverse: false }) {
     if (this.registeredHooks[method] && this.registeredHooks[method].length) {
       const list = options.reverse ? Array.from(this.registeredHooks[method]).reverse() : this.registeredHooks[method];
 

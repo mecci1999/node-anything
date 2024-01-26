@@ -31,7 +31,7 @@ export default class TcpWriter extends EventEmitter {
     const node = this.transporter.getNode(nodeID);
     if (!node) return Promise.reject(new UniverseError(`Missing node info for '${nodeID}'!`));
 
-    // 主域名
+    // 从节点注册表中获取到节点的ip地址
     const host = this.transporter.getNodeAddress(node);
     // 端口号
     const port = node.port;
@@ -87,6 +87,7 @@ export default class TcpWriter extends EventEmitter {
         // 获取socket
         let socket = this.sockets.get(nodeID);
         if (socket && !socket.destroyed) return socket;
+
         // 不存在，则进行连接
         return this.connect(nodeID);
       })

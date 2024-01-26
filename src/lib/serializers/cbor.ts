@@ -1,5 +1,5 @@
 import { GenericObject } from '@/typings';
-import { Star } from '../star';
+import Star from '../star';
 import BaseSerializer from './base';
 import _ from 'lodash';
 import Cbor from 'cbor-x';

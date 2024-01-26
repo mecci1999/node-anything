@@ -1,6 +1,6 @@
 import Service from '@/lib/star/service';
 import { ActionHandler, ActionSchema, CallingOptions } from '../context';
-import { Star } from '@/lib/star';
+import Star from '@/lib/star';
 import { ServiceEvent } from '../context/event';
 
 export type CallMiddlewareHandler = {

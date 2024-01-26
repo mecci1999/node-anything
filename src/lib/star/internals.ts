@@ -1,6 +1,8 @@
 import { safetyObject } from '@/utils';
-import { Star } from '.';
+import Star from '.';
 import Context from '../context';
+import { StarClientError } from '../error';
+import { UniverseErrorCode, UniverseErrorOptionsType } from '@/typings/error';
 
 export default function (star: Star) {
   const schema = {
@@ -162,7 +164,17 @@ export default function (star: Star) {
           }
         },
         handler(ctx: Context) {
-          // if(!star)
+          if (!star.isMetricsEnabled()) {
+            return Promise.reject(
+              new StarClientError(
+                'Metrics feature is disabled',
+                UniverseErrorCode.RESPONSE_ERROR,
+                UniverseErrorOptionsType.METRICS_DISABLED
+              )
+            );
+          }
+
+          return star.metrics?.list(ctx.params);
         }
       }
     }

@@ -1,4 +1,6 @@
+import BaseCacher from '@/lib/cachers/base';
 import Context from '@/lib/context';
+import { GenericObject } from '..';
 
 export type ActionCacheEnabledFuncType = (ctx: Context) => boolean;
 
@@ -26,3 +28,13 @@ export interface CacherOptions {
   maxParamsLength?: number;
   [key: string]: any;
 }
+
+export interface RedisCacherOptions extends CacherOptions {
+  prefix?: string;
+  redis?: GenericObject;
+  redlock?: boolean | GenericObject;
+  monitor?: boolean;
+  pingInterval?: number;
+}
+
+export type Cacher<T extends BaseCacher = BaseCacher> = T;

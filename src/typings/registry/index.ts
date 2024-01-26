@@ -7,6 +7,7 @@ export interface StarRegistryOptions {
   strategyOptions?: GenericObject;
   preferLocal?: boolean;
   discoverer?: RegistryDiscovererOptions | BaseDiscoverer | string;
+  stopDelay?: number;
 }
 
 export interface RegistryDiscovererOptions {

@@ -3,6 +3,7 @@ import BaseDiscoverer from './base';
 import Etcd3Discoverer from './etcd3';
 import RedisDiscoverer from './redis';
 import LocalDiscoverer from './local';
+import { StarOptionsError } from '@/lib/error';
 
 /**
  * 服务发现模块
@@ -29,7 +30,21 @@ function resolve(options: object | string) {
     if (DiscovererClass) return new DiscovererClass();
 
     if ((options as string).startsWith('redis://')) return new Discoverers.Base();
+
+    throw new StarOptionsError(`Invalid Discoverer type '${options}'.`, { type: options as string });
+  } else if (isObject(options)) {
+    let DiscovererClass = getByName((options as any).type || 'Local');
+
+    if (DiscovererClass) {
+      return new DiscovererClass((options as any).options);
+    } else {
+      throw new StarOptionsError(`Invalid Discoverer type '${(options as any).type}'.`, {
+        type: (options as any).type
+      });
+    }
   }
+
+  return new Discoverers.Local();
 }
 
 function register(name, value) {

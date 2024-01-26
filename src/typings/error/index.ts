@@ -19,7 +19,11 @@ export enum UniverseErrorOptionsType {
   PROTOCOL_VERSION_MISMATCH = 'PROTOCOL_VERSION_MISMATCH', // 协议版本不匹配错误
   INVALID_PACKET_DATA = 'INVALID_PACKET_DATA', // 无效数据包错误
   MISSING_PAYLOAD = 'MISSING_PAYLOAD',
-  INVALID_ENDPOINT = 'INVALID_ENDPOINT'
+  INVALID_ENDPOINT = 'INVALID_ENDPOINT',
+  INVALID_PARAMETERS = 'INVALID_PARAMETERS', // 无效的参数
+  METRICS_DISABLED = 'METRICS_DISABLED', // 禁用指标
+  NOT_FOUND_EVENT = 'NOT_FOUND_EVENT', // 没找到服务对应的事件
+  WAITFOR_SERVICES = 'WAITFOR_SERVICES' // 等待服务超时
 }
 
 export enum UniverseErrorType {
@@ -79,6 +83,9 @@ export interface UniverseErrorData {
   schema?: any;
   size?: number;
   limit?: number;
+  eventName?: string;
+  services?: any[];
+  statuses?: any[];
 }
 
 export interface UniverseErrorOptions {

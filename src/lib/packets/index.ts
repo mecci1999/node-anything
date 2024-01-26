@@ -19,7 +19,7 @@ export default class Packet {
   public params: any;
   public paramsType: any;
 
-  constructor(type: PacketTypes, target: any, payload: GenericObject | PacketPayload) {
+  constructor(type: PacketTypes, target?: any, payload?: GenericObject | PacketPayload) {
     this.type = type || PacketTypes.PACKET_UNKNOWN;
     this.target = target;
     this.payload = payload || {};

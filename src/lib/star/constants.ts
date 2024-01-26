@@ -26,13 +26,13 @@ export default {
   FAILED_SEND_PONG_PACKET: 'failedSendPongPacket',
   /** @type {String} Emitted when transit fails to send a HEARTBEAT packet*/
   FAILED_SEND_HEARTBEAT_PACKET: 'failedSendHeartbeatPacket',
-  /** @type {String} Emitted when broker fails to stop all services*/
+  /** @type {String} Emitted when star fails to stop all services*/
   FAILED_STOPPING_SERVICES: 'failedServicesStop',
-  /** @type {String} Emitted when broker fails to stop all services*/
+  /** @type {String} Emitted when star fails to stop all services*/
   FAILED_LOAD_SERVICE: 'failedServiceLoad',
-  /** @type {String} Emitted when broker fails to stop all services*/
+  /** @type {String} Emitted when star fails to stop all services*/
   FAILED_RESTART_SERVICE: 'failedServiceRestart',
-  /** @type {String} Emitted when broker fails to stop all services*/
+  /** @type {String} Emitted when star fails to stop all services*/
   FAILED_DESTRUCTION_SERVICE: 'failedServiceDestruction',
   /** @type {String} Emitted when CACHER/DISCOVERER/TRANSPORTER client receives an error*/
   CLIENT_ERROR: 'clientError',

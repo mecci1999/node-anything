@@ -1,7 +1,7 @@
 import os from 'os';
 import { getIpList } from '@/utils';
 
-const UNIVERSE_VERSION = require('package.json').version;
+const UNIVERSE_VERSION = '0.0.1';
 
 /**
  * 获取应用信息

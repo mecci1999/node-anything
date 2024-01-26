@@ -3,7 +3,7 @@
  */
 import _ from 'lodash';
 import { isObject, isString, matchActionOrEvent } from '@/utils/index';
-import { BaseLoggerLevels, LogLevelConfig, LoggerBindings } from '@/typings/logger';
+import { BaseLoggerLevels } from '@/typings/logger';
 import { LoggerFactory } from './factory';
 import { GenericObject } from '@/typings';
 
@@ -12,8 +12,8 @@ export const LEVELS: BaseLoggerLevels[] = [
   BaseLoggerLevels.fatal, // 崩溃
   BaseLoggerLevels.error, // 错误
   BaseLoggerLevels.warn, // 警告
-  BaseLoggerLevels.info, // 信息
   BaseLoggerLevels.debug, // debug
+  BaseLoggerLevels.info, // 信息
   BaseLoggerLevels.trace // 跟踪
 ];
 
@@ -29,20 +29,17 @@ export default class BaseLogger {
 
   constructor(options: GenericObject) {
     this.options = _.defaultsDeep(options, { level: BaseLoggerLevels.info, createLogger: null });
-    // 使用Promise
-    this.Promise = Promise;
   }
 
   // 初始化
   public init(loggerFactory: LoggerFactory) {
     this.loggerFactory = loggerFactory;
     this.star = loggerFactory.star;
-    this.Promise = loggerFactory.star.Promise;
   }
 
   // 停止日志写入
   public stop() {
-    return this.Promise.resolve();
+    return Promise.resolve();
   }
 
   // 获取日志类型

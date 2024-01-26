@@ -4,7 +4,7 @@ import { isFunction } from '@/utils';
 import { GenericObject } from '@/typings';
 import { LoggerFactory } from './factory';
 import log4js, { Log4js, Logger } from 'log4js';
-import { Star } from '../star';
+import Star from '../star';
 import { BaseLoggerLevels } from '@/typings/logger';
 
 export class Log4jsLogger extends BaseLogger {
@@ -40,7 +40,7 @@ export class Log4jsLogger extends BaseLogger {
   /**
    * 停止写入日志
    */
-  public stop() {
+  public stop(): Promise<any> {
     if (this.log4js) {
       return new Promise((resolve) => this.log4js?.shutdown(resolve));
     }

@@ -1,6 +1,6 @@
 import { GenericObject } from '@/typings';
 import { Registry } from '../registry';
-import { Star } from '../star';
+import Star from '../star';
 import BaseStrategy from './base';
 import _ from 'lodash';
 import { LRUCache } from 'lru-cache';

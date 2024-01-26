@@ -28,7 +28,7 @@ export default class ConsoleLogger extends FormattedLogger {
   /**
    * 日志输出格式处理方法
    */
-  public getLogHandler(bindings: GenericObject):any {
+  public getLogHandler(bindings: GenericObject): any {
     const level = bindings ? this.getLogLevel(bindings.mod) : null;
     if (!level) return null;
 
@@ -37,8 +37,9 @@ export default class ConsoleLogger extends FormattedLogger {
     const formatter = this.getFormatter(bindings);
 
     return (type: BaseLoggerLevels, args: any) => {
-      const typeIndex = LEVELS.indexOf(level);
+      const typeIndex = LEVELS.indexOf(type);
       if (typeIndex > levelIndex) return;
+
       const pargs = formatter(type, args);
       switch (type) {
         case BaseLoggerLevels.fatal:

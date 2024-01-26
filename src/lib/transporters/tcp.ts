@@ -32,7 +32,9 @@ export default class TcpTransporter extends BaseTransporter {
   public nodes: NodeCatalog | null = null;
 
   constructor(options: GenericObject) {
-    if (isString(options)) options = { urls: options };
+    if (isString(options)) {
+      options = { urls: options };
+    }
 
     super(options);
 
@@ -60,9 +62,11 @@ export default class TcpTransporter extends BaseTransporter {
 
         gossipPeriod: 2, // seconds
         maxConnections: 32, // Max live outgoing TCP connections
-        maxPacketSize: 1 * 1024 * 1024
+        maxPacketSize: 1 * 1024 * 1024,
+
+        debug: false
       },
-      options
+      this.options
     );
 
     this.reader = null;
@@ -88,7 +92,7 @@ export default class TcpTransporter extends BaseTransporter {
     if (this.star) {
       this.registry = this.star.registry;
       this.discoverer = this.star.registry?.discoverer || null;
-      this.nodes = this.registry?.nodes || null;
+      this.nodes = this.registry?.nodes || null; // 服务节点注册表
 
       // 禁止使用正常的心跳
       this.discoverer?.disableHeartbeat();
@@ -103,8 +107,26 @@ export default class TcpTransporter extends BaseTransporter {
       .then(() => {
         if (this.options.urls) return this.loadUrls();
       })
-      .then(() => this.startTcpServer())
-      .then(() => this.startUdpServer());
+      .then(() => {
+        // 启动TCP服务
+        return this.startTcpServer();
+      })
+      .then(() => {
+        // 启动UDP服务
+        return this.startUdpServer();
+      })
+      .then(() => {
+        return this.startTimers();
+      })
+      .then(() => {
+        this.logger?.info('TCP Transporter started.');
+        this.connected = true;
+        (this.nodes as any).localNode.port = this.options.port;
+        this.registry?.regenerateLocalRawInfo(true);
+      })
+      .then(() => {
+        return this.onConnected();
+      });
   }
 
   /**
@@ -133,13 +155,14 @@ export default class TcpTransporter extends BaseTransporter {
   private startUdpServer() {
     this.udpServer = new UdpServer(this, this.options);
 
-    this.udpServer.on('message', (nodeID, address, port) => {
+    this.udpServer.on('udpMessage', (nodeID, address, port) => {
+      // 接受到其他节点的dicovery包，用于发现注册其他节点信息
       if (nodeID && nodeID !== this.nodeID) {
         this.logger?.info(`UDP discovery received from ${address} on ${nodeID}`);
         // 获取节点
         let node = this.nodes?.get(nodeID);
         if (!node) {
-          // 未知节点
+          // 添加未知节点
           node = this.addOfflineNode(nodeID, address, port);
         } else if (!node.available) {
           // 更新连接数据
@@ -149,9 +172,11 @@ export default class TcpTransporter extends BaseTransporter {
           if (node.ipList.indexOf(address) == -1) node.ipList.unshift(address);
         }
 
-        return this.udpServer?.bind();
+        node.udpAddress = address;
       }
     });
+
+    return this.udpServer?.bind();
   }
 
   /**
@@ -159,6 +184,7 @@ export default class TcpTransporter extends BaseTransporter {
    */
   public loadUrls() {
     if (!this.options?.urls) return Promise.resolve();
+
     if (Array.isArray(this.options?.urls) && this.options?.urls.length === 0) {
       return Promise.resolve();
     }
@@ -238,6 +264,11 @@ export default class TcpTransporter extends BaseTransporter {
    * @param data
    */
   public receive(type: PacketTypes, message: Buffer, socket?: Socket) {
+    // 日志
+    this.logger?.debug(
+      `Star ${this.star?.namespace} nodeID ${this.star?.nodeID} receive a type ${type} message ${message}`
+    );
+
     switch (type) {
       case PacketTypes.PACKET_GOSSIP_HELLO:
         return this.processGossipHello(message, socket);
@@ -264,8 +295,10 @@ export default class TcpTransporter extends BaseTransporter {
     this.gossipTimer = setInterval(() => {
       const node = this.getLocalNodeInfo();
       if (!node) return;
-      node.updateLocalInfo(this.star?.getCpuUsage()).then(() => this.sendGossipRequest());
+
+      node.updateLocalInfo(this.star?.getCpuUsage).then(() => this.sendGossipRequest());
     }, Math.max(this.options.gossipPeriod, 1) * 1000);
+
     this.gossipTimer.unref();
   }
 
@@ -293,7 +326,7 @@ export default class TcpTransporter extends BaseTransporter {
       const packet = this.deserialize(PacketTypes.PACKET_GOSSIP_RES, message);
       const payload = packet?.payload;
       if (this.GOSSIP_DEBUG) {
-        this.logger?.info(`------ REQUEST ${this.nodeID} <- ${payload?.sender} ------`, payload);
+        this.logger?.debug(`------ REQUEST ${this.nodeID} <- ${payload?.sender} ------`, payload);
       }
 
       const list = this.nodes?.toArray();
@@ -363,14 +396,16 @@ export default class TcpTransporter extends BaseTransporter {
         const rspPacket = new Packet(PacketTypes.PACKET_GOSSIP_RES, sender?.id, response);
         (this.publish(rspPacket) as Promise<any>).catch(() => {});
 
-        if (this.GOSSIP_DEBUG)
-          this.logger?.info(
+        if (this.GOSSIP_DEBUG) {
+          this.logger?.debug(
             kleur.bgMagenta().black(`----- RESPONSE ${this.nodeID} -> ${sender?.id} -----`),
             rspPacket.payload
           );
+        }
       } else {
-        if (this.GOSSIP_DEBUG)
-          this.logger?.info(kleur.bgBlue().white(`----- EMPTY RESPONSE ${this.nodeID} -> ${payload?.sender} -----`));
+        if (this.GOSSIP_DEBUG) {
+          this.logger?.debug(kleur.bgBlue().white(`----- EMPTY RESPONSE ${this.nodeID} -> ${payload?.sender} -----`));
+        }
       }
     } catch (error) {
       this.logger?.warn('Invalid incoming GOSSIP_REQ packet.', error);
@@ -387,7 +422,7 @@ export default class TcpTransporter extends BaseTransporter {
       const packet = this.deserialize(PacketTypes.PACKET_GOSSIP_RES, message);
       const payload = packet?.payload;
       if (this.GOSSIP_DEBUG) {
-        this.logger?.info(`------ RESPONSE ${this.nodeID} <- ${payload?.sender} -----`, payload);
+        this.logger?.debug(`------ RESPONSE ${this.nodeID} <- ${payload?.sender} -----`, payload);
       }
 
       // 处理在线节点
@@ -495,18 +530,19 @@ export default class TcpTransporter extends BaseTransporter {
     const ep = endpoints.length === 1 ? endpoints[0] : endpoints[Math.floor(Math.random() * endpoints.length)];
     if (ep) {
       const packet = new Packet(PacketTypes.PACKET_GOSSIP_REQ, ep.id, data);
+
       this.publish(packet)?.catch(() => {
         this.logger?.debug(`Unable to send Gossip packet to ${ep.id}`);
       });
 
       if (this.GOSSIP_DEBUG) {
-        this.logger?.info(kleur.bgYellow().black(`------ REQUEST ${this.nodeID} -> ${ep.id} ------`), packet.payload);
+        this.logger?.debug(kleur.bgYellow().black(`------ REQUEST ${this.nodeID} -> ${ep.id} ------`), packet.payload);
       }
     }
   }
 
   /**
-   * 添加掉线节点
+   * 添加未知节点
    */
   private addOfflineNode(id: string, address: string, port: number) {
     const node = new Node(id);
@@ -519,6 +555,7 @@ export default class TcpTransporter extends BaseTransporter {
     node.seq = 0;
     node.offlineSince = Math.round(process.uptime());
 
+    // 添加节点
     this.nodes?.add(node.id, node);
 
     return node;
@@ -559,13 +596,14 @@ export default class TcpTransporter extends BaseTransporter {
         PacketTypes.PACKET_REQUEST,
         PacketTypes.PACKET_RESPONSE,
         PacketTypes.PACKET_GOSSIP_REQ,
-        PacketTypes.PACKET_GOSSIP_REQ,
-        PacketTypes.PACKET_GOSSIP_RES
+        PacketTypes.PACKET_GOSSIP_RES,
+        PacketTypes.PACKET_GOSSIP_HELLO
       ].indexOf(packet.type) == -1
     ) {
       // 不符合规范的消息数据
       return Promise.resolve();
     }
+
     // 序列化
     const data = this.serialize(packet);
 
@@ -579,11 +617,20 @@ export default class TcpTransporter extends BaseTransporter {
   public send(type: PacketTypes, data: Buffer, meta: GenericObject) {
     const packetID = C.resolvePacketID(type);
     const { packet } = meta;
-
-    return this.writer?.send(packet.target, packetID, data).catch((error) => {
-      this.nodes?.disconnected(packet.target, true);
-      throw error;
-    });
+    this.logger?.debug(
+      `------------- Star ${this.star?.namespace} node ${this.star?.nodeID} send a packetID ${packetID} type ${type} data ${data} meta ${meta} packet ---------> Node ${packet.target}`
+    );
+    return this.writer
+      ?.send(packet.target, packetID, data)
+      .then(() => {
+        this.logger?.debug(
+          `Star ${this.star?.namespace} node ${this.star?.nodeID} send a packetID ${packetID} type ${type} data ${data} meta ${meta} packet ---------> Node ${packet.target}`
+        );
+      })
+      .catch((error) => {
+        this.nodes?.disconnected(packet.target, true);
+        throw error;
+      });
   }
 
   /**
@@ -598,6 +645,7 @@ export default class TcpTransporter extends BaseTransporter {
     // 获取当前节点信息
     const localNode = this.nodes?.localNode;
     if (!localNode) return Promise.reject(new StarServerError(`Missing localNode info`));
+
     // 构建发送包
     const packet = new Packet(PacketTypes.PACKET_GOSSIP_HELLO, nodeID, {
       host: this.getNodeAddress(localNode),
@@ -605,7 +653,7 @@ export default class TcpTransporter extends BaseTransporter {
     });
 
     if (this.GOSSIP_DEBUG) {
-      this.logger?.info(kleur.bgCyan().black(`------ HELLO ${this.nodeID} -> ${nodeID} ------`), packet.payload);
+      this.logger?.debug(kleur.bgCyan().black(`------ HELLO ${this.nodeID} -> ${nodeID} ------`), packet.payload);
     }
 
     // 发布消息
@@ -624,7 +672,7 @@ export default class TcpTransporter extends BaseTransporter {
       const payload = packet?.payload;
       const nodeID = payload?.sender; // 发送方
       if (this.GOSSIP_DEBUG) {
-        this.logger?.info(`------ HELLO ${this.nodeID} <- ${payload?.sender} -----`, payload);
+        this.logger?.debug(`------ HELLO ${this.nodeID} <- ${payload?.sender} -----`, payload);
         let node = this.nodes?.get(nodeID); // 获取发送的节点信息
         if (!node) {
           // 没有查到该节点，说明该节点为未知节点，则需要注册该节点

@@ -7,7 +7,7 @@ import { GenericObject } from '@/typings';
 import { isFunction } from '@/utils';
 import { LoggerFactory } from './factory';
 import Pino from 'pino';
-import { Star } from '../star';
+import Star from '../star';
 import { BaseLoggerLevels } from '@/typings/logger';
 
 export class PinoLogger extends BaseLogger {
