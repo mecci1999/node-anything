@@ -43,6 +43,7 @@ import { ServiceSearchObj } from '@/typings/star/service';
 import path from 'path';
 import { format } from 'util';
 import { Validator } from '@/typings/validator';
+import kleur from 'kleur';
 
 // 默认选项
 const defaultOptions = {
@@ -403,7 +404,7 @@ export default class Star {
         // 启动过程所花费的时间
         const duration = Date.now() - startTime;
         this.logger?.info(
-          `✔ Star with ${this.services.length} service(s) started successfully in ${humanize(duration)}`
+          kleur.green(`✔ Star with ${this.services.length} service(s) started successfully in ${humanize(duration)}`)
         );
       });
   }
@@ -569,6 +570,7 @@ export default class Star {
         const nodeID = options.nodeID;
         // 找到端点
         const endpoint = this.registry?.getActionEndpointByNodeId(actionName, nodeID);
+
         if (!endpoint) {
           this.logger?.warn(`Service '${actionName}' is not found on '${nodeID}' node.`);
           return new ServiceNotFoundError({ action: actionName, nodeID });
@@ -580,6 +582,7 @@ export default class Star {
           this.logger?.warn(`Service '${actionName}' is not registered.`);
           return new ServiceNotFoundError({ action: actionName });
         }
+
         // 得到下一个端点
         const endpoint = epList.next(context);
         if (!endpoint) {
@@ -606,6 +609,7 @@ export default class Star {
       if (endpoint instanceof Error) {
         return Promise.reject(endpoint).catch((error) => this.errorHandler(error, { actionName, params, options }));
       }
+
       ctx = options.ctx;
       ctx.endpoint = endpoint;
       ctx.nodeID = endpoint.id;
@@ -635,8 +639,10 @@ export default class Star {
         requestID: ctx.requestID
       });
     }
+
     if (!ctx.endpoint?.action?.handler)
       return Promise.reject(new UniverseError('star call action is error, ctx endpoint action handle is undefined.'));
+
     // 端口处理的结果
     let p = ctx.endpoint.action.handler(ctx);
     p.ctx = ctx;
@@ -735,16 +741,14 @@ export default class Star {
     }
 
     // 获取本地节点
-    if (ctx) {
-      let endpoint = epList.nextLocal(ctx);
-      if (!endpoint) {
-        // 没有获取到有效节点
-        this.logger?.warn(`Service '${actionName}' is not available locally.`);
-        throw new ServiceNotAvailableError({ action: actionName, nodeID: `${this.nodeID}` });
-      }
-
-      return endpoint;
+    let endpoint = epList.nextLocal(ctx);
+    if (!endpoint) {
+      // 没有获取到有效节点
+      this.logger?.warn(`Service '${actionName}' is not available locally.`);
+      throw new ServiceNotAvailableError({ action: actionName, nodeID: `${this.nodeID}` });
     }
+
+    return endpoint;
   }
 
   /**

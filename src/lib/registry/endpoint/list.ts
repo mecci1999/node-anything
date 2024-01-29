@@ -58,25 +58,33 @@ export default class EndpointList {
 
       return found;
     }
-    let endpoint;
-    switch (getConstructorName(this.EndPointFactory)) {
-      case 'EventEndpoint':
+
+    let endpoint: any;
+    const name = getConstructorName(this.EndPointFactory);
+    switch (name) {
+      case 'EventEndpoint': {
         endpoint = new EventEndpoint(this.registry, this.star, node, service, data);
         break;
-      case 'ActionEndpoint':
+      }
+      case 'ActionEndpoint': {
         endpoint = new ActionEndpoint(this.registry, this.star, node, service, data);
         break;
-      default:
+      }
+      default: {
         endpoint = new Endpoint(this.registry, this.star, node);
+        break;
+      }
     }
-
     this.endpoints.push(endpoint);
     this.setLocalEndpoints();
 
     return endpoint;
   }
 
-  private setLocalEndpoints() {
+  /**
+   * 获取当前本地端点
+   */
+  public setLocalEndpoints() {
     this.localEndpoints = this.endpoints.filter((ep) => ep.local);
   }
 
@@ -92,7 +100,7 @@ export default class EndpointList {
   /**
    * 根据通信策略选择下一个端点
    */
-  public select(list: Endpoint[], ctx: Context) {
+  public select(list: Endpoint[], ctx?: Context) {
     const res: Endpoint = this.strategy.select(list, ctx);
     if (!res) {
       throw new StarServerError(
@@ -112,6 +120,10 @@ export default class EndpointList {
   public next(ctx: Context) {
     if (this.endpoints.length === 0) return null;
 
+    if (this.internal && this.hasLocal()) {
+      return this.nextLocal();
+    }
+
     if (this.endpoints.length === 1) {
       const item = this.endpoints[0];
       if (item.isAvailable) return item;
@@ -119,12 +131,12 @@ export default class EndpointList {
       return null;
     }
 
-    if (this.registry.options.preferLocal === true && this.hasLocal()) {
+    if (this.registry.options?.preferLocal === true && this.hasLocal()) {
       const ep = this.nextLocal(ctx);
-      if (ep && ep.isAvailable) return null;
+      if (ep && ep.isAvailable) return ep;
     }
 
-    const epList = this.localEndpoints.filter((ep) => ep.isAvailable);
+    const epList = this.endpoints.filter((ep) => ep.isAvailable);
     if (epList.length === 0) return null;
 
     return this.select(epList, ctx);
@@ -143,7 +155,7 @@ export default class EndpointList {
    * @param ctx
    * @returns
    */
-  public nextLocal(ctx: Context) {
+  public nextLocal(ctx?: Context) {
     if (this.localEndpoints.length === 0) {
       return null;
     }

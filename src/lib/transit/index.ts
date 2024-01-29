@@ -376,7 +376,7 @@ export default class Transit {
 
       // Request
       if (cmd === PacketTypes.PACKET_REQUEST) {
-        return this.requestHandler(payload);
+        return this.requestHandler(payload).then(() => true);
       }
 
       // Response
@@ -457,30 +457,28 @@ export default class Transit {
       }
 
       const endpoint = this.star._getLocalActionEndpoint(payload.action);
-      if (endpoint) {
-        // 获取到有效的节点，创建一个新的上下文
-        const ctx = new this.star.ContextFactory(this.star);
-        ctx.setEndpoint(endpoint);
-        ctx.id = payload.id;
-        ctx.setParams(pass ? pass : payload.params, this.star.options.contextParamsCloning);
-        ctx.parentID = payload.parentID;
-        ctx.requestID = payload.requestID;
-        ctx.caller = payload.caller;
-        ctx.meta = payload.meta || {};
-        ctx.level = payload.level;
-        ctx.tracing = payload.tracing;
-        ctx.nodeID = payload.sender;
+      // 获取到有效的节点，创建一个新的上下文
+      const ctx = new this.star.ContextFactory(this.star);
+      ctx.setEndpoint(endpoint);
+      ctx.id = payload.id;
+      ctx.setParams(pass ? pass : payload.params, this.star.options.contextParamsCloning);
+      ctx.parentID = payload.parentID;
+      ctx.requestID = payload.requestID;
+      ctx.caller = payload.caller;
+      ctx.meta = payload.meta || {};
+      ctx.level = payload.level;
+      ctx.tracing = payload.tracing;
+      ctx.nodeID = payload.sender;
 
-        if (payload.timeout !== null) ctx.options.timeout = payload.timeout;
+      if (payload.timeout !== null) ctx.options.timeout = payload.timeout;
 
-        if (endpoint.action?.handler) {
-          const p = endpoint.action?.handler(ctx);
-          p.ctx = ctx;
+      if (endpoint && endpoint.action?.handler) {
+        const p = endpoint.action?.handler(ctx);
+        p.ctx = ctx;
 
-          return p
-            .then((res) => this.sendResponse(payload.sender, payload.id, ctx.meta, res, null))
-            .catch((err) => this.sendResponse(payload.sender, payload.id, ctx.meta, null, err));
-        }
+        return p
+          .then((res) => this.sendResponse(payload.sender, payload.id, ctx.meta, res, null))
+          .catch((err) => this.sendResponse(payload.sender, payload.id, ctx.meta, null, err));
       }
 
       return Promise.reject(

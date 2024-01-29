@@ -57,7 +57,7 @@ export default class Service<S = ServiceSettingSchema> {
    * @returns
    */
   public static getVersionedFullName(name: string, version?: string | number) {
-    if (version !== null) {
+    if (version) {
       return (typeof version == 'number' ? 'v' + version : version) + '.' + name;
     }
 
