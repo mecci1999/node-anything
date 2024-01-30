@@ -191,8 +191,11 @@ export default class Context {
    * @param cloning
    */
   public setParams(newParams: object, cloning: boolean = false) {
-    if (cloning && newParams) this.params = Object.assign({}, newParams);
-    else this.params = newParams;
+    if (cloning && newParams) {
+      this.params = Object.assign({}, newParams);
+    } else {
+      this.params = newParams;
+    }
   }
 
   /**

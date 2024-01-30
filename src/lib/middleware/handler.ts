@@ -58,9 +58,9 @@ export default class MiddlewareHandler {
 
   /**
    * 封装处理器
-   * @param method
-   * @param handler
-   * @param def
+   * @param method // 需要封装的方法
+   * @param handler // 原处理方法
+   * @param def // 原对象
    * @returns
    */
   public wrapHandler(method: string, handler: Function, def: Object) {

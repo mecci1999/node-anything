@@ -69,8 +69,19 @@ export default class Registry {
           value: item.available
         };
       });
-      this.logger.debug(`---------- 注册的节点表 -----------`);
+      // const services = this.getServiceList({
+      //   onlyLocal: false,
+      //   onlyAvaliable: false,
+      //   skipInterval: false,
+      //   withActions: false,
+      //   withEvents: false,
+      //   grouping: false
+      // }).map(item => {
+      //   key: item.
+      // });
+      this.logger.debug(`---------- 服务注册表 -----------`);
       this.printLogger('节点ID', nodes);
+      // this.printLogger('服务列表', nodes);
     }, 30 * 1000);
   }
 
@@ -292,12 +303,12 @@ export default class Registry {
       }
 
       if (item.events) {
-        this.registerEvents(node, service, item.actions);
+        this.registerEvents(node, service, item.events);
       }
 
       if (prevEvents) {
         _.forIn(prevEvents, (event, name) => {
-          if (!item.events || item.events[name]) {
+          if (!item.events || !item.events[name]) {
             this.unregisterEvent(node, name);
           }
         });
@@ -311,14 +322,14 @@ export default class Registry {
 
       let exist = false;
       serviceList.forEach((item) => {
-        if (service.equals(item.fullName, service.node.id)) {
+        if (service.equals(item.fullName)) {
           exist = true;
         }
-
-        if (!exist) {
-          this.unregisterService(service.fullName, node.id);
-        }
       });
+
+      if (!exist) {
+        this.unregisterService(service.fullName, node.id);
+      }
     });
 
     this.star.servicesChanged(false);
@@ -344,9 +355,11 @@ export default class Registry {
    */
   public unregisterService(fullName: string, nodeID?: string) {
     if (!this.star.nodeID) return;
+
     nodeID = nodeID || this.star.nodeID;
     // 移除服务
     this.services.remove(fullName, nodeID);
+
     if (nodeID === this.star.nodeID) {
       // 清楚本地服务
       const index = this.nodes.localNode?.services.findIndex((item) => item.fullName === fullName);
@@ -398,7 +411,7 @@ export default class Registry {
       rawInfo.services = [];
     }
 
-    if (!node?.rawInfo) return;
+    if (!node) return;
     node.rawInfo = safetyObject(rawInfo, this.star.options);
 
     return node.rawInfo;

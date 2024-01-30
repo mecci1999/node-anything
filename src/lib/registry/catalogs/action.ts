@@ -51,6 +51,10 @@ export default class ActionCatalog {
       );
       this.actions.set(action.name, list);
     }
+
+    list.add(node, service, action);
+
+    return list;
   }
 
   /**

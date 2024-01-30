@@ -68,7 +68,7 @@ export default class Service<S = ServiceSettingSchema> {
    * 解析服务协议，并注册本地服务
    * @param schema
    */
-  protected parseServiceSchema(schema: any) {
+  private parseServiceSchema(schema: any) {
     // 抛出异常问题
     if (!isObject(schema))
       throw new ServiceSchemaError("The service schema can't be null. Maybe is it not a service schema?");
@@ -123,7 +123,7 @@ export default class Service<S = ServiceSettingSchema> {
       name: this.name,
       version: this.version,
       fullName: this.fullName,
-      settings: this.settings,
+      settings: this._getPublishSettings(this.settings),
       metadata: this.metadata,
       actions: {},
       events: {}
@@ -167,6 +167,7 @@ export default class Service<S = ServiceSettingSchema> {
       _.forIn(schema.actions, (action, name) => {
         if (action === false) return;
 
+        // 创建动作模型
         let innerAction = this._createAction(action, name);
 
         serviceSpecification.actions[innerAction.name] = innerAction;
@@ -179,19 +180,17 @@ export default class Service<S = ServiceSettingSchema> {
 
         const ep = this.star.registry?.createPrivateActionEndpoint(innerAction);
 
-        if (this.actions) {
-          this.actions[name] = (params, options: any) => {
-            let ctx: any;
+        (this.actions as ServiceActions)[name] = (params, options: any) => {
+          let ctx: any;
 
-            if (options && options.ctx) {
-              ctx = options.ctx;
-            } else {
-              ctx = this.star.ContextFactory.create(this.star, ep, params, options || {});
-            }
+          if (options && options.ctx) {
+            ctx = options.ctx;
+          } else {
+            ctx = this.star.ContextFactory.create(this.star, ep, params, options || {});
+          }
 
-            return wrappedHandler(ctx);
-          };
-        }
+          return wrappedHandler(ctx);
+        };
       });
     }
 
@@ -293,7 +292,7 @@ export default class Service<S = ServiceSettingSchema> {
       .then(() => {
         // 执行服务中的start异步方法
         if (isFunction(this.schema?.started)) {
-          return promiseMethod(this.schema?.started).call(this);
+          return promiseMethod(this.schema?.started as any).call(this);
         }
 
         if (Array.isArray(this.schema?.started)) {
@@ -332,7 +331,7 @@ export default class Service<S = ServiceSettingSchema> {
       })
       .then(() => {
         if (isFunction(this.schema?.stopped)) {
-          return promiseMethod(this.schema?.stopped).call(this);
+          return promiseMethod(this.schema?.stopped as any).call(this);
         }
 
         if (this.schema?.stopped && Array.isArray(this.schema?.stopped)) {
@@ -431,6 +430,8 @@ export default class Service<S = ServiceSettingSchema> {
     }
 
     action.service = this;
+
+    // 将动作原方法变成异步方法
     action.handler = promiseMethod(handler.bind(this));
 
     return action;
