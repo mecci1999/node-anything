@@ -142,7 +142,7 @@ export default class KafkaTransporter extends BaseTransporter {
 
         // 注意：这里如果一直在连接中，会导致进程一直卡在连接kafka中
         this.consumer.on('connect', () => {
-          this.logger?.info(`KAFKA 消费者连接成功!`);
+          this.logger?.info(`KAFKA Consumer connected is success!`);
           resolve();
         });
       });

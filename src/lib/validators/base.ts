@@ -65,7 +65,7 @@ export default class BaseValidator {
           const check: any = self.compile(action[paramName]);
 
           return function validateContextParams(ctx: Context) {
-            const res = check(ctx.params !== null ? ctx.params : {}, { meta: ctx });
+            const res = check(ctx.params != null ? ctx.params : {}, { meta: ctx });
 
             if (check.async) {
               // 异步事件
@@ -86,7 +86,7 @@ export default class BaseValidator {
           const check: any = self.compile(event[paramName]);
 
           return function validateContextParams(ctx: Context) {
-            const res = check(ctx.params !== null ? ctx.params : {}, { meta: ctx });
+            const res = check(ctx.params != null ? ctx.params : {}, { meta: ctx });
 
             if (check.async) {
               // 异步事件

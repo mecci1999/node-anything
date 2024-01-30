@@ -470,7 +470,7 @@ export default class Transit {
       ctx.tracing = payload.tracing;
       ctx.nodeID = payload.sender;
 
-      if (payload.timeout !== null) ctx.options.timeout = payload.timeout;
+      if (payload.timeout != null) ctx.options.timeout = payload.timeout;
 
       if (endpoint && endpoint.action?.handler) {
         const p = endpoint.action?.handler(ctx);
@@ -511,28 +511,26 @@ export default class Transit {
 
     this.logger.debug(`<= Response '${req?.action.name}' is received from '${packet.sender}'.`);
 
-    if (req) {
-      if (req?.ctx) {
-        // 更新nodeID
-        req.ctx.nodeID = packet.sender;
-        // 合并meta
-        Object.assign(req.ctx.meta || {}, packet.meta || {});
-      }
+    if (req?.ctx) {
+      // 更新nodeID
+      req.ctx.nodeID = packet.sender;
+      // 合并meta
+      Object.assign(req.ctx.meta || {}, packet.meta || {});
+    }
 
-      // 处理响应式流
-      if (packet.stream !== null) {
-        if (this._handleIncomingResponseStream(packet, req)) return;
-      }
+    // 处理响应式流
+    if (packet.stream != null) {
+      if (this._handleIncomingResponseStream(packet, req as TransitRequest)) return;
+    }
 
-      // 移除等待的请求
-      this.removePendingRequest(id);
+    // 移除等待的请求
+    this.removePendingRequest(id);
 
-      if (!packet.success) {
-        // 失败
-        req.reject(this._createErrorFromPayload(packet.error, packet));
-      } else {
-        req.resolve(packet.data);
-      }
+    if (!packet.success) {
+      // 失败
+      req?.reject(this._createErrorFromPayload(packet.error, packet));
+    } else {
+      req?.resolve(packet.data);
     }
   }
 
@@ -825,9 +823,9 @@ export default class Transit {
     this.pendingRequests.forEach((req, id) => {
       if (req.nodeID === nodeID) {
         this.pendingRequests.delete(id);
-        req.reject(new RequestRejectedError({ action: req.action?.name || req.action, nodeID: req.nodeID }));
         this.pendingReqStreams.delete(id);
         this.pendingResStreams.delete(id);
+        req.reject(new RequestRejectedError({ action: req.action?.name || req.action, nodeID: req.nodeID }));
       }
     });
   }

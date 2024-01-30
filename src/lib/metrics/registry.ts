@@ -288,11 +288,11 @@ export default class MetricRegistry {
     const res: GenericObject[] = [];
     options = options || [];
 
-    const types = options.types !== null ? (isString(options.types) ? [options.types] : options.types) : null;
+    const types = options.types != null ? (isString(options.types) ? [options.types] : options.types) : null;
     const includes =
-      options.includes !== null ? (isString(options.includes) ? [options.includes] : options.includes) : null;
+      options.includes != null ? (isString(options.includes) ? [options.includes] : options.includes) : null;
     const excludes =
-      options.excludes !== null ? (isString(options.excludes) ? [options.excludes] : options.excludes) : null;
+      options.excludes != null ? (isString(options.excludes) ? [options.excludes] : options.excludes) : null;
 
     this.store.forEach((metric) => {
       if (types && !types.some((type) => metric.type === type)) return;

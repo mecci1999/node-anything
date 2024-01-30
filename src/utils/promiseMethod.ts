@@ -1,3 +1,6 @@
+/**
+ * 将函数转换为异步函数
+ */
 export function promiseMethod(fn: (this: any, ...args: any[]) => any): any {
   let promiseFunc = function (func: (this: any, ...args: any[]) => any) {
     return function (this: any, ...args: any[]) {

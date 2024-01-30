@@ -22,8 +22,8 @@ export default class BaseDiscoverer {
 
   constructor(options?: DiscovererOptions) {
     this.options = _.defaultsDeep({}, options, {
-      heartbeatInterval: null, // 默认5分钟
-      heartbeatTimeout: null, // 心跳时间间隔 默认5分钟
+      heartbeatInterval: null, // 默认心跳间隔时间为10秒
+      heartbeatTimeout: null, // 默认30秒没收到心跳，则判定为超时
       disableHeartbeatChecks: false, // 默认开启心跳检查
       disableOfflineNodeRemoving: false, // 默认清除断开连接的节点
       cleanOfflineNodesTimeout: 10 * 60 // 默认每隔10分钟清除一遍断线的节点
@@ -47,11 +47,11 @@ export default class BaseDiscoverer {
       if (this.star.transit) this.transit = this.star.transit;
 
       if (!this.options.heartbeatInterval) {
-        this.options.heartbeatInterval = this.star.options.heartbeatInterval || 5 * 60;
+        this.options.heartbeatInterval = this.star.options.heartbeatInterval || 10;
       }
 
       if (!this.options.heartbeatTimeout) {
-        this.options.heartbeatTimeout = this.star.options.heartbeatTimeout || 5 * 60;
+        this.options.heartbeatTimeout = this.star.options.heartbeatTimeout || 30;
       }
     }
 
@@ -78,13 +78,12 @@ export default class BaseDiscoverer {
       // 心跳定时器
       this.heartbeatTimer = setInterval(() => this.beat(), time);
       this.heartbeatTimer.unref();
+
       // 检查节点定时器
-      this.checkNodesTimer = setInterval(
-        () => this.checkRemoteNodes(),
-        (this.options.heartbeatTimeout || 5 * 60) * 1000
-      );
+      this.checkNodesTimer = setInterval(() => this.checkRemoteNodes(), (this.options.heartbeatTimeout || 30) * 1000);
       this.checkNodesTimer.unref();
-      // 检查节点是否断线定时器
+
+      // 每隔一段时间清理一次超时的节点
       this.offlineTimer = setInterval(() => this.checkOfflineNodes(), 60 * 1000); // 一分钟一次
       this.offlineTimer.unref();
     }
@@ -150,6 +149,8 @@ export default class BaseDiscoverer {
         node.lastHeartbeatTime = now;
         return;
       }
+
+      // 检查是否超时
       if (now - node.lastHeartbeatTime > (this.options.heartbeatTimeout as number)) {
         this.logger?.warn(`Heartbeat is not received from '${node.id}' node.`);
         this.registry?.nodes.disconnected(node.id, true);
@@ -194,10 +195,10 @@ export default class BaseDiscoverer {
         // 重新连接节点，请求一个新的信息
         this.discoverNode(nodeID);
       } else {
-        if (payload.seq !== null && node.seq !== payload.seq) {
+        if (payload?.seq && node.seq !== payload.seq) {
           // 远程节点的服务发生改变
           this.discoverNode(nodeID);
-        } else if (payload.instanceID !== null && !node.instanceID?.startsWith(payload.instanceID)) {
+        } else if (payload?.instanceID && node.instanceID && !node.instanceID.startsWith(payload.instanceID)) {
           // 远程节点重启
           this.discoverNode(nodeID);
         } else {
@@ -214,7 +215,12 @@ export default class BaseDiscoverer {
    * 发送一个心跳给节点
    */
   public sendHeartbeat() {
-    if (!this.transit || !this.localNode) return Promise.resolve();
+    if (!this.transit) return Promise.resolve();
+
+    if (!this.localNode) {
+      this.logger?.warn(`Discoverers Module not get localNode ${this.star?.nodeID} info.`);
+      return Promise.resolve();
+    }
 
     return this.transit.sendHeartbeat(this.localNode);
   }

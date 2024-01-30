@@ -188,9 +188,9 @@ export default class BaseCacher {
    * 通过key获取参数对应的值
    */
   public getParamMetaValue(key: string, params: GenericObject, meta: GenericObject) {
-    if (key.startsWith('#') && meta !== null) {
+    if (key.startsWith('#') && meta != null) {
       return _.get(meta, key.slice(1));
-    } else if (params !== null) {
+    } else if (params != null) {
       return _.get(params, key);
     }
   }
@@ -245,7 +245,7 @@ export default class BaseCacher {
       return Object.keys(obj)
         .map((key) => [key, this._generateKeyFromObject(obj[key])].join('|'))
         .join('|');
-    } else if (obj !== null) {
+    } else if (obj != null) {
       return obj.toString();
     } else {
       return 'null';

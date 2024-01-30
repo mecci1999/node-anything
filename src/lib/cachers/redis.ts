@@ -72,7 +72,7 @@ export default class RedisCacher extends BaseCacher {
 
     // 使用redlock进行分布式锁
     if (this.options.redlock !== false) {
-      if (Redlock !== null) {
+      if (Redlock != null) {
         let redlockClients = (this.options.redlock ? this.options.redlock.client : null) || [this.client];
 
         this.redlock = new Redlock(redlockClients, _.omit(this.options.redlock, ['clients']));
@@ -121,13 +121,13 @@ export default class RedisCacher extends BaseCacher {
    * 关闭缓存
    */
   public close(): Promise<any> {
-    if (this.pingIntervalHandle !== null) {
+    if (this.pingIntervalHandle != null) {
       clearInterval(this.pingIntervalHandle);
       this.pingIntervalHandle = null;
     }
 
     // 退出redis客户端
-    return this.client !== null ? this.client.quit() : Promise.resolve();
+    return this.client != null ? this.client.quit() : Promise.resolve();
   }
 
   /**

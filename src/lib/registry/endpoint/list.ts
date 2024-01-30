@@ -177,7 +177,7 @@ export default class EndpointList {
    * 检查是否存在有用的节点
    */
   public hasAvailable() {
-    return this.endpoints.find((ep) => ep.isAvailable) !== null;
+    return this.endpoints.find((ep) => ep.isAvailable) != null;
   }
 
   /**
@@ -201,7 +201,7 @@ export default class EndpointList {
    * 检查端点中是否存在nodeID
    */
   public hasNodeID(nodeID: string) {
-    return this.endpoints.find((ep) => ep.id === nodeID) !== null;
+    return this.endpoints.find((ep) => ep.id === nodeID) != null;
   }
 
   /**

@@ -70,7 +70,7 @@ const defaultOptions = {
   contextParamsCloning: false,
   maxCallLevel: 0,
 
-  heartbeatInterval: 15,
+  heartbeatInterval: 10,
   heartbeatTimeout: 30,
 
   tracking: {
@@ -86,7 +86,7 @@ const defaultOptions = {
     stopDelay: 100,
     discoverer: {
       type: 'Local',
-      options: { heartbeatInterval: 15, heartbeatTimeout: 30 }
+      options: { heartbeatInterval: 10, heartbeatTimeout: 30 }
     }
   },
 
@@ -603,7 +603,7 @@ export default class Star {
 
     // 创建上下文
     let ctx: Context;
-    if (options && options.ctx !== null) {
+    if (options && options.ctx != null) {
       // 找到动作的下一个端点
       const endpoint = this.findNextActionEndpoint(actionName, options, options.ctx);
       if (endpoint instanceof Error) {
@@ -1540,7 +1540,7 @@ export default class Star {
       this.logger?.debug(`Load Service '${path.basename(fileName)}'`);
       // 引入文件
       const r = require(fileName);
-      schema = r.default !== null ? r.default : r;
+      schema = r.default != null ? r.default : r;
 
       let service: any;
 

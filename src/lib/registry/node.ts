@@ -88,14 +88,15 @@ export default class Node {
    * 心跳
    */
   public heartbeat(payload: GenericObject) {
+    // 收到心跳，更新节点状态
     if (!this.available) {
       this.available = true;
       this.offlineSince = null;
     }
 
-    if (payload.cpu !== null) {
+    if (payload.cpu != null) {
       this.cpu = payload.cpu;
-      this.cpuSeq = payload.cpuSeq || 1;
+      this.cpuSeq = payload?.cpuSeq || 1;
     }
 
     this.lastHeartbeatTime = Math.round(process.uptime());

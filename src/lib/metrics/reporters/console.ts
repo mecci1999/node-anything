@@ -82,9 +82,9 @@ export default class ConsoleReporter extends BaseReporter {
             case METRIC.TYPE_GAUGE:
             case METRIC.TYPE_INFO: {
               val = item.value === '' ? kleur.grey('<empty string>') : kleur.green().bold(item.value);
-              if (item.rate !== null) {
+              if (item.rate != null) {
                 val =
-                  val + kleur.grey(' | Rate: ') + (item.rate !== null ? kleur.green().bold(item.rate.toFixed(2)) : '-');
+                  val + kleur.grey(' | Rate: ') + (item.rate != null ? kleur.green().bold(item.rate.toFixed(2)) : '-');
               }
               break;
             }
@@ -95,24 +95,24 @@ export default class ConsoleReporter extends BaseReporter {
 
               if (item.buckets) {
                 Object.keys(item.buckets).forEach((bucket) => {
-                  s.push(`${bucket}: ${item.buckets[bucket] !== null ? item.buckets[bucket] : '-'}`);
+                  s.push(`${bucket}: ${item.buckets[bucket] != null ? item.buckets[bucket] : '-'}`);
                 });
               }
 
               if (item.quantiles) {
-                s.push(`Min: ${item.min !== null ? item.min.toFixed(2) : '-'}`);
-                s.push(`Mean: ${item.mean !== null ? item.mean.toFixed(2) : '-'}`);
-                s.push(`Var: ${item.variance !== null ? item.variance.toFixed(2) : '-'}`);
-                s.push(`StdDev: ${item.stdDev !== null ? item.stdDev.toFixed(2) : '-'}`);
-                s.push(`Max: ${item.max !== null ? item.max.toFixed(2) : '-'}`);
+                s.push(`Min: ${item.min != null ? item.min.toFixed(2) : '-'}`);
+                s.push(`Mean: ${item.mean != null ? item.mean.toFixed(2) : '-'}`);
+                s.push(`Var: ${item.variance != null ? item.variance.toFixed(2) : '-'}`);
+                s.push(`StdDev: ${item.stdDev != null ? item.stdDev.toFixed(2) : '-'}`);
+                s.push(`Max: ${item.max != null ? item.max.toFixed(2) : '-'}`);
 
                 Object.keys(item.quantiles).forEach((key) => {
-                  s.push(`${key}: ${item.quantiles[key] !== null ? item.quantiles[key].toFixed(2) : '-'}`);
+                  s.push(`${key}: ${item.quantiles[key] != null ? item.quantiles[key].toFixed(2) : '-'}`);
                 });
               }
 
-              if (item.rate !== null) {
-                s.push(`Rate: ${item.rate !== null ? item.rate.toFixed(2) : '-'}`);
+              if (item.rate != null) {
+                s.push(`Rate: ${item.rate != null ? item.rate.toFixed(2) : '-'}`);
               }
 
               val = kleur.green().bold(s.join(' | '));
