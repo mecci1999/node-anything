@@ -362,7 +362,7 @@ export function match(text: string, pattern: string) {
 /**
  * 废弃一个方法或者属性
  */
-export function deprecate(prop: any, msg: any) {
+export function deprecate(prop: any, msg?: any) {
   if (arguments.length === 1) {
     msg = prop;
   }

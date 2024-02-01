@@ -105,6 +105,8 @@ export default class MiddlewareHandler {
         fn.apply(this.star, args);
       });
     }
+
+    return;
   }
 
   /**

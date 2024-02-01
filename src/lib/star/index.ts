@@ -129,7 +129,7 @@ const defaultOptions = {
   tracing: { enabled: false },
 
   internalServices: true,
-  internalMiddlewares: true,
+  internalMiddlewares: true, // 是否注册内部中间件
 
   dependencyInterval: 1000,
   dependencyTimeout: 0,
@@ -287,7 +287,7 @@ export default class Star {
       // 记录、跟踪服务模块
 
       // 注册中间件
-      // this.registerMiddlewares(this.options.middlewares);
+      this.registerMiddlewares(this.options.middlewares);
 
       // 通信传输模块
       if (this.options.transporter) {
