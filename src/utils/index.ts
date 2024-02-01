@@ -408,7 +408,7 @@ export function circularReplacer(options = { maxSafeObjectSize: Infinity }) {
 /**
  * 安全改造一个对象
  */
-export function safetyObject(obj: any, options: any) {
+export function safetyObject(obj: any, options?: any) {
   return JSON.parse(JSON.stringify(obj, circularReplacer(options)));
 }
 

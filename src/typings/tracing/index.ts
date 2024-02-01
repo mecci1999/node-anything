@@ -1,5 +1,6 @@
 import Context from '@/lib/context';
 import { GenericObject } from '..';
+import BaseTraceExporter from '@/lib/tracing/exporters/base';
 
 export type TracingActionTagsFuncType = (ctx: Context, response?: any) => GenericObject;
 
@@ -36,3 +37,33 @@ export interface TracingActionOptions extends TracingOptions {
 export interface TracingEventOptions extends TracingOptions {
   tags?: TracingEventTags;
 }
+
+export interface TracerExporterOptions {
+  type: string;
+  options?: GenericObject;
+}
+
+export interface TracerOptions {
+  enabled?: boolean;
+  exporter?: string | TracerExporterOptions | (TracerExporterOptions | string)[] | null;
+  sampling?: {
+    rate?: number | null;
+    tracesPerSecond?: number | null;
+    minPriority?: number | null;
+  };
+
+  actions?: boolean;
+  events?: boolean;
+
+  errorFields?: string[];
+  stackTrace?: boolean;
+
+  defaultTags?: GenericObject | Function | null;
+
+  tags?: {
+    action?: TracingActionTags;
+    event?: TracingEventTags;
+  };
+}
+
+export type TraceExporter<T extends BaseTraceExporter = BaseTraceExporter> = T;
