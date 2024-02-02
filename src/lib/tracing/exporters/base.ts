@@ -37,6 +37,23 @@ export default class BaseTraceExporter {
     // Not implemented
   }
 
+  /**
+   * 扁平化一个对象为一级对象
+   * 举例：
+   * ```js
+   * 	{
+   * 		error: {
+   * 			name: "MoleculerError"
+   * 		}
+   * 	}
+   *  ```
+   *
+   * 	**To:**
+   * 	```js
+   *  {
+   * 		"error.name": "MoleculerError"
+   *  }
+   */
   public flattenTags(obj: GenericObject, convertToString: boolean = false, path: string = '') {
     if (!obj) return null;
 

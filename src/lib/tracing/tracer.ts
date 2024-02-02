@@ -6,6 +6,7 @@ import RateLimiter from './rate-limiter';
 import { isFunction } from '@/utils';
 import { TraceExporter, TracerOptions } from '@/typings/tracing';
 import Expoters from './exporters/index';
+import Span from './span';
 
 export default class Tracer {
   public star: Star;
@@ -84,4 +85,32 @@ export default class Tracer {
   }
 
   public stop() {}
+
+  public shouldSample(span: Span) {
+    if (this.options.sampling.minPriority != null) {
+      if (span.priority < this.options.sampling.minPriority) {
+        return false;
+      }
+    }
+
+    if (this.rateLimiter) {
+      return this.rateLimiter.check();
+    }
+
+    if (this.options.sampling.rate == 0) {
+      return false;
+    }
+
+    if (this.options.sampling.rate == 1) {
+      return true;
+    }
+
+    if (++this.sampleCounter * this.options.sampling.rate >= 1.0) {
+      this.sampleCounter = 0;
+
+      return true;
+    }
+
+    return false;
+  }
 }

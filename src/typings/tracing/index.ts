@@ -67,3 +67,10 @@ export interface TracerOptions {
 }
 
 export type TraceExporter<T extends BaseTraceExporter = BaseTraceExporter> = T;
+
+export interface SpanLogEntry {
+  name: string;
+  fields: GenericObject;
+  time: number;
+  elapsed: number;
+}
