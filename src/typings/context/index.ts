@@ -118,4 +118,5 @@ export interface CallingOptions {
   tracking?: boolean;
   paramsCloning?: boolean;
   caller?: string;
+  ctx?: Context;
 }

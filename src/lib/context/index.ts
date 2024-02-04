@@ -13,6 +13,7 @@ import { MCallCallingOptions, StarMCallActionParams } from '@/typings/star';
 import { isString } from '@/utils';
 import _ from 'lodash';
 import util from 'util';
+import Span from '../tracing/span';
 
 function mergeMeta(ctx: Context, newMeta: GenericObject) {
   if (newMeta) {
@@ -37,7 +38,8 @@ export default class Context {
   public parentID: string | null;
   public caller: string | null;
   public tracing: boolean | null;
-  // public span: Span | null;
+  public span: Span | null;
+  public _spanStack: Span[];
   public needAck: boolean | null;
   public ackID: string | null;
   public locals: object;
@@ -83,8 +85,8 @@ export default class Context {
     this.locals = {};
     this.requestID = this.id;
     this.tracing = null;
-    // this.span = null;
-    // this._spanStack = [];
+    this.span = null;
+    this._spanStack = [];
     this.needAck = null;
     this.ackID = null;
 
@@ -160,10 +162,10 @@ export default class Context {
   /**
    * 复制一个上下文实例
    */
-  public copy(endpoint: Endpoint) {
+  public copy(endpoint?: Endpoint) {
     const newCtx = new Context(this.star);
     newCtx.nodeID = this.nodeID;
-    newCtx.setEndpoint(endpoint || this.endpoint);
+    newCtx.setEndpoint(endpoint || (this.endpoint as Endpoint));
     newCtx.options = this.options;
     newCtx.parentID = this.parentID;
     newCtx.caller = this.caller;
@@ -173,7 +175,7 @@ export default class Context {
     newCtx.locals = this.locals;
     newCtx.requestID = this.requestID;
     newCtx.tracing = this.tracing;
-    // newCtx.span = this.span;
+    newCtx.span = this.span;
     newCtx.needAck = this.needAck;
     newCtx.ackID = this.ackID;
     newCtx.eventName = this.eventName;
@@ -385,26 +387,26 @@ export default class Context {
   }
 
   /**
-   * Start a new child tracing span.
+   * 开始追踪
    *
    * @param {String} name
    * @param {Object?} opts
    * @returns {Span}
    * @memberof Context
    */
-  // startSpan(name, opts) {
-  //   let span;
-  //   if (this.span) {
-  //     span = this.span.startSpan(name, Object.assign({ ctx: this }, opts));
-  //   } else {
-  //     span = this.broker.tracer.startSpan(name, Object.assign({ ctx: this }, opts));
-  //   }
+  public startSpan(name: string, opts?: GenericObject) {
+    let span: any;
+    if (this.span) {
+      span = this.span.startSpan(name, Object.assign({ ctx: this }, opts));
+    } else {
+      span = this.star.tracer?.startSpan(name, Object.assign({ ctx: this }, opts));
+    }
 
-  //   this._spanStack.push(span);
-  //   this.span = span;
+    this._spanStack.push(span);
+    this.span = span;
 
-  //   return span;
-  // }
+    return span;
+  }
 
   /**
    * Finish an active span.
@@ -412,20 +414,19 @@ export default class Context {
    * @param {Span} span
    * @param {Number?} time
    */
-  // finishSpan(span, time) {
-  //   if (!span.isActive()) return;
+  public finishSpan(span: Span, time?: number) {
+    if (!span.isActive()) return;
 
-  //   span.finish(time);
+    span.finish(time);
 
-  //   const idx = this._spanStack.findIndex((sp) => sp == span);
-  //   if (idx !== -1) {
-  //     this._spanStack.splice(idx, 1);
-  //     this.span = this._spanStack[this._spanStack.length - 1];
-  //   } else {
-  //     /* istanbul ignore next */
-  //     this.service.logger.warn('This span is not assigned to this context', span);
-  //   }
-  // }
+    const idx = this._spanStack.findIndex((sp) => sp == span);
+    if (idx !== -1) {
+      this._spanStack.splice(idx, 1);
+      this.span = this._spanStack[this._spanStack.length - 1];
+    } else {
+      this.service?.logger?.warn('This span is not assigned to this context', span);
+    }
+  }
 
   /**
    * 将Context类转换为一个可读JSON对象

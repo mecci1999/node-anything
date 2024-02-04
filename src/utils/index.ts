@@ -12,6 +12,7 @@ import { getMilliseconds } from './getMilliseconds';
 import { promiseMethod } from './promiseMethod';
 import { functionArguments } from './functionArguments';
 import { isNewSignature } from './isNewSignature';
+import clearRequireCache from './clearRequireCache';
 
 const RegexCache = new Map();
 
@@ -454,4 +455,12 @@ export function isDate(date: any) {
   return date instanceof Date && !Number.isNaN(date.getTime());
 }
 
-export { promiseAllControl, sleep, getMilliseconds, promiseMethod, functionArguments, isNewSignature };
+export {
+  promiseAllControl,
+  sleep,
+  getMilliseconds,
+  promiseMethod,
+  functionArguments,
+  isNewSignature,
+  clearRequireCache
+};

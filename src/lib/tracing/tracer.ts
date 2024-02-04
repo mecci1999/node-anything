@@ -84,7 +84,20 @@ export default class Tracer {
     }
   }
 
-  public stop() {}
+  public stop(): Promise<any> {
+    if (this.exporter) {
+      return Promise.all(this.exporter.map((r) => r.stop()));
+    }
+
+    return Promise.resolve();
+  }
+
+  /**
+   * 是否启用追踪模块
+   */
+  public isEnabled() {
+    return this.options.enabled;
+  }
 
   public shouldSample(span: Span) {
     if (this.options.sampling.minPriority != null) {
@@ -112,5 +125,67 @@ export default class Tracer {
     }
 
     return false;
+  }
+
+  /**
+   * 开始追踪
+   */
+  public startSpan(name: string, options: GenericObject = {}) {
+    let parentOptions: GenericObject = {};
+
+    if (options?.parentSpan) {
+      parentOptions.traceID = options.parentOptions.traceID;
+      parentOptions.parentID = options.parentOptions.id;
+      parentOptions.sampled = options.parentSpan.sampled;
+    }
+
+    const span = new Span(
+      this,
+      name,
+      Object.assign(
+        {
+          type: 'custom',
+          defaultTags: this.defaultTags
+        },
+        parentOptions,
+        options,
+        {
+          parentSpan: undefined
+        }
+      )
+    );
+
+    span.start();
+
+    return span;
+  }
+
+  public spanStarted(span: Span) {
+    if (span.sampled) {
+      this.invokeExporter('spanStarted', [span]);
+    }
+  }
+
+  public spanFinished(span: Span) {
+    if (span.sampled) {
+      this.invokeExporter('spanFinished', [span]);
+    }
+  }
+
+  /**
+   * 注入运输方法
+   */
+  public invokeExporter(method: string, args: Array<any>) {
+    if (this.exporter) {
+      this.exporter.forEach((exporter) => exporter[method].apply(exporter, args));
+    }
+  }
+
+  public getCurrentTraceID() {
+    return null;
+  }
+
+  public getActiveSpanID() {
+    return null;
   }
 }

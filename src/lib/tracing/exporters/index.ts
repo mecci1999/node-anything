@@ -2,9 +2,19 @@ import { isInheritedClass, isObject, isString } from '@/utils';
 import { StarOptionsError } from '../../error';
 import BaseTraceExporter from './base';
 import { UniverseErrorOptionsType } from '@/typings/error';
+import ConsoleTraceExporter from './console';
+import EventTraceExporter from './event';
+import EventLegacyTraceExporter from './event-legacy';
+import ZipkinTraceExporter from './zipkin';
+import NewRelicTraceExporter from './newrelic';
 
 const Exporters = {
-  Base: BaseTraceExporter
+  Base: BaseTraceExporter,
+  Console: ConsoleTraceExporter,
+  Event: EventTraceExporter,
+  EventLegacy: EventLegacyTraceExporter,
+  Zipkin: ZipkinTraceExporter,
+  NewRelic: NewRelicTraceExporter
 };
 
 /**

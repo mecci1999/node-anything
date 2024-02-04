@@ -54,15 +54,15 @@ export default class BaseTraceExporter {
    * 		"error.name": "MoleculerError"
    *  }
    */
-  public flattenTags(obj: GenericObject, convertToString: boolean = false, path: string = '') {
+  public flattenTags(obj: GenericObject | null, convertToString: boolean = false, path: string = '') {
     if (!obj) return null;
 
     if (this.options.safetyTags) {
       obj = safetyObject(obj);
     }
 
-    return Object.keys(obj).reduce((res, key) => {
-      const value = obj[key];
+    return Object.keys(obj as GenericObject).reduce((res, key) => {
+      const value = (obj as GenericObject)[key];
       const p = (path ? path + '.' : '') + key;
 
       if (isObject(value)) {
@@ -75,7 +75,7 @@ export default class BaseTraceExporter {
     }, {});
   }
 
-  public errorToObject(error: Error) {
+  public errorToObject(error: Error | boolean | null) {
     if (!error) return null;
 
     return _.pick(error, this.tracer?.options.errorFields);

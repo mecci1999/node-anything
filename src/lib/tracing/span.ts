@@ -27,7 +27,8 @@ export default class Span {
   public startTime: number | null;
   public finishTime: number | null;
   public duration: number | null;
-  public error: Error | null;
+  public startTicks: number = 0;
+  public error: Error | boolean | null;
   public logs: SpanLogEntry[];
   public tags: GenericObject;
 
@@ -82,5 +83,87 @@ export default class Span {
     Object.assign(this.tags, obj);
 
     return this;
+  }
+
+  /**
+   * 开始追踪
+   */
+  public start(time?: number) {
+    this.logger?.debug(`[${this.id}] Span '${this.name}' is started.`);
+
+    this.startTime = time || Date.now();
+    this.startTicks = performance.now();
+    this.tracer?.spanStarted(this);
+
+    return this;
+  }
+
+  /**
+   * 获取当前时间
+   */
+  public getTime() {
+    return (this.startTime || 0) + performance.now() - this.startTicks;
+  }
+
+  /**
+   * 打印事件日志
+   */
+  public log(name: string, fields?: GenericObject, time?: number) {
+    time = time || this.getTime();
+
+    this.logs.push({
+      name,
+      fields: fields || {},
+      time,
+      elapsed: time - (this.startTime || 0)
+    });
+
+    this.logger?.debug(`[${this.id}] Span '${this.name}' has a new log event: ${name}.`);
+
+    return this;
+  }
+
+  public setError(err: Error) {
+    this.error = err !== null ? err : true;
+
+    return this;
+  }
+
+  /**
+   * 结束
+   */
+  public finish(time?: number) {
+    this.finishTime = time ? time : this.getTime();
+    this.duration = this.finishTime - (this.startTime || 0);
+
+    this.logger?.debug(
+      `[${this.id}] Span '${this.name}' is finished. Duration: ${Number(this.duration).toFixed(3)} ms`,
+      this.tags
+    );
+
+    this.tracer?.spanFinished(this);
+
+    return this;
+  }
+
+  /**
+   * 是否正在追踪
+   */
+  public isActive() {
+    return this.finishTime == null;
+  }
+
+  /**
+   * 开始一个子节点的追踪
+   */
+  public startSpan(name: string, options?: GenericObject) {
+    const r = {
+      traceID: this.traceID,
+      parentID: this.id,
+      sampled: this.sampled,
+      service: this.service
+    };
+
+    return this.tracer?.startSpan(name, options ? Object.assign(r, options) : r);
   }
 }

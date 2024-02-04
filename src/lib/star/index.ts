@@ -44,6 +44,7 @@ import path from 'path';
 import { format } from 'util';
 import { Validator } from '@/typings/validator';
 import kleur from 'kleur';
+import Tracer from '../tracing/tracer';
 
 // 默认选项
 const defaultOptions = {
@@ -193,6 +194,7 @@ export default class Star {
   public metrics: MetricRegistry | null = null;
   public registry: Registry | null = null;
   public validator: Validator | null = null;
+  public tracer: Tracer | null = null;
   public middlewares: MiddlewareHandler | null = null;
   public services: Service[] = [];
 
@@ -285,6 +287,8 @@ export default class Star {
       }
 
       // 记录、跟踪服务模块
+      this.tracer = new Tracer(this, this.options.tracing || {});
+      this.tracer.init();
 
       // 注册中间件
       this.registerMiddlewares(this.options.middlewares);
@@ -414,90 +418,88 @@ export default class Star {
    */
   public stop() {
     this.started = false;
-    return (
-      Promise.resolve()
-        .then(() => {
-          if (this.transit) {
-            this.registry?.regenerateLocalRawInfo(true, true);
-            return this.registry?.discoverer.sendLocalNodeInfo();
-          }
-        })
-        .then(() => {
-          if (this.options.registry?.stopDelay) {
-            return sleep(this.options.registry.stopDelay);
-          }
-        })
-        .then(() => {
-          this.stopping = true;
+    return Promise.resolve()
+      .then(() => {
+        if (this.transit) {
+          this.registry?.regenerateLocalRawInfo(true, true);
+          return this.registry?.discoverer.sendLocalNodeInfo();
+        }
+      })
+      .then(() => {
+        if (this.options.registry?.stopDelay) {
+          return sleep(this.options.registry.stopDelay);
+        }
+      })
+      .then(() => {
+        this.stopping = true;
 
-          return this.callMiddlewareHook('stopping', [this], { reverse: true });
-        })
-        .then(() => {
-          return Promise.all(this.services.map((service) => service._stop.call(service))).catch((error) => {
-            this.logger?.error('Unable to stop all services.', error);
+        return this.callMiddlewareHook('stopping', [this], { reverse: true });
+      })
+      .then(() => {
+        return Promise.all(this.services.map((service) => service._stop.call(service))).catch((error) => {
+          this.logger?.error('Unable to stop all services.', error);
 
-            this.broadcastLocal('$star.error', {
-              error: error,
-              module: 'star',
-              type: C.FAILED_STOPPING_SERVICES
-            });
+          this.broadcastLocal('$star.error', {
+            error: error,
+            module: 'star',
+            type: C.FAILED_STOPPING_SERVICES
           });
-        })
-        .then(() => {
-          if (this.transit) {
-            return this.transit.disconnect();
-          }
-        })
-        .then(() => {
-          if (this.cacher) {
-            return this.cacher.close();
-          }
-        })
-        .then(() => {
-          if (this.metrics) {
-            return this.metrics.stop();
-          }
-        })
-        // .then(() => {
-        //   if (this.tracer) {
-        //     return this.tracer.stop();
-        //   }
-        // })
-        .then(() => {
-          return this.registry?.stop();
-        })
-        .then(() => {
-          return this.callMiddlewareHook('stopped', [this], { reverse: true });
-        })
-        .then(() => {
-          if (isFunction(this.options.stopped)) {
-            return (this.options.stopped as Function)(this);
-          }
-        })
-        .catch((err) => {
-          this.logger?.error(err);
-        })
-        .then(() => {
-          this.logger?.info('Star is stopped. Good bye.');
-          this.metrics?.set(METRIC.UNIVERSE_STAR_STARTED, 0);
+        });
+      })
+      .then(() => {
+        if (this.transit) {
+          return this.transit.disconnect();
+        }
+      })
+      .then(() => {
+        if (this.cacher) {
+          return this.cacher.close();
+        }
+      })
+      .then(() => {
+        if (this.metrics) {
+          return this.metrics.stop();
+        }
+      })
+      .then(() => {
+        if (this.tracer) {
+          return this.tracer.stop();
+        }
+      })
+      .then(() => {
+        return this.registry?.stop();
+      })
+      .then(() => {
+        return this.callMiddlewareHook('stopped', [this], { reverse: true });
+      })
+      .then(() => {
+        if (isFunction(this.options.stopped)) {
+          return (this.options.stopped as Function)(this);
+        }
+      })
+      .catch((err) => {
+        this.logger?.error(err);
+      })
+      .then(() => {
+        this.logger?.info('Star is stopped. Good bye.');
+        this.metrics?.set(METRIC.UNIVERSE_STAR_STARTED, 0);
 
-          this.broadcastLocal('$star.stopped');
+        this.broadcastLocal('$star.stopped');
 
-          if (this.options.skipProcessEventRegistration === false) {
-            // 取消监听器
-            process.removeListener('beforeExit', this._closeFn);
-            process.removeListener('exit', this._closeFn);
-            process.removeListener('SIGINT', this._closeFn);
-            process.removeListener('SIGTERM', this._closeFn);
-          }
-        })
-        .then(() => {
-          return (this.loggerFactory as LoggerFactory).stop();
-        })
-        .catch((err) => {
-          console.error('Star is stopped falid.', err);
-        })
-    );
+        if (this.options.skipProcessEventRegistration === false) {
+          // 取消监听器
+          process.removeListener('beforeExit', this._closeFn);
+          process.removeListener('exit', this._closeFn);
+          process.removeListener('SIGINT', this._closeFn);
+          process.removeListener('SIGTERM', this._closeFn);
+        }
+      })
+      .then(() => {
+        return (this.loggerFactory as LoggerFactory).stop();
+      })
+      .catch((err) => {
+        console.error('Star is stopped falid.', err);
+      });
   }
 
   /**
@@ -1113,7 +1115,7 @@ export default class Star {
       ?.register({
         name: METRIC.UNIVERSE_STAR_MIDDLEWARES_TOTAL,
         type: METRIC.TYPE_GAUGE,
-        description: '星球的中间件人造卫星数量'
+        description: '星球的人造卫星中间件数量'
       })
       ?.set(0);
   }
@@ -1122,7 +1124,7 @@ export default class Star {
    * 检查跟踪模块是否被禁用
    */
   public isTracingEnabled() {
-    // return this.tracer.isEnabled()
+    return this.tracer?.isEnabled();
   }
 
   /**
