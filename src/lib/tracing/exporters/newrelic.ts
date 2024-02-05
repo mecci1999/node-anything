@@ -4,6 +4,7 @@ import Span from '../span';
 import _ from 'lodash';
 import Tracer from '../tracer';
 import { isFunction } from '@/utils';
+import fetch from 'node-fetch';
 
 export default class NewRelicTraceExporter extends BaseTraceExporter {
   public queue: Array<Span>;

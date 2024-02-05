@@ -9,7 +9,7 @@ const retryMiddleware = (star: Star) => {
     const actionName = action.name;
     const service = action.service ? action.service.fullName : null;
 
-    const options = Object.assign({}, (this as any).options.retryPolicy, action.retryPolicy || {});
+    const options = Object.assign({}, star.options.retryPolicy, action.retryPolicy || {});
     if (options.enabled) {
       return function RetryMiddleware(ctx: Context) {
         const attempts = typeof ctx.options.retries === 'number' ? ctx.options.retries : options.retries;
@@ -58,7 +58,7 @@ const retryMiddleware = (star: Star) => {
 
           return Promise.reject(err);
         });
-      }.bind(this);
+      };
     }
 
     return handler;

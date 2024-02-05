@@ -14,8 +14,8 @@ import { Middleware } from '../middleware';
 import { Cacher } from '../cachers';
 import { MetricRegistryOptions } from '../metric';
 import BaseValidator from '@/lib/validators/base';
-import { TracerOptions } from '../tracing';
-import { BulkheadOptions, RetryPolicyOptions } from '../context';
+import { StarTrackingOptions, TracerOptions } from '../tracing';
+import { BulkheadOptions, RetryPolicyOptions, StarCircuitBreakerOptions } from '../context';
 
 /**
  * 配置项
@@ -55,11 +55,11 @@ export interface StarOptions {
   requestTimeout?: number;
   retryPolicy?: RetryPolicyOptions;
 
-  // tracking?: BrokerTrackingOptions;
+  tracking?: StarTrackingOptions;
 
   disableBalancer?: boolean;
 
-  // circuitBreaker?: BrokerCircuitBreakerOptions;
+  circuitBreaker?: StarCircuitBreakerOptions;
 
   bulkhead?: BulkheadOptions;
 

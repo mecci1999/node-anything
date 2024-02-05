@@ -1,12 +1,17 @@
+/**
+ * 隔离机制
+ */
+
 import Context from '../context';
 import { QueueIsFullError } from '../error';
 import { METRIC } from '../metrics';
 import Star from '../star';
 
-const bulkheadMiddleware = (star: Star) => {
-  const wrapActionBulkheadMiddleware = (handler: any, action: any) => {
+function bulkheadMiddleware(star: Star) {
+  function wrapActionBulkheadMiddleware(handler: any, action: any) {
     const service = action.service;
-    const options = Object.assign({}, (this as any).options.bulkhead || {}, action.bulkhead || {});
+    /* istanbul ignore next */
+    const options = Object.assign({}, star.options.bulkhead || {}, action.bulkhead || {});
 
     if (options.enabled) {
       const queue: any[] = [];
@@ -115,15 +120,15 @@ const bulkheadMiddleware = (star: Star) => {
         });
 
         return p;
-      }.bind(this);
+      };
     }
 
     return handler;
-  };
+  }
 
-  const wrapEventBulkheadMiddleware = (handler: any, event: any) => {
+  function wrapEventBulkheadMiddleware(handler: any, event: any) {
     const service = event.service;
-    const options = Object.assign({}, (this as any).options.bulkhead || {}, event.bulkhead || {});
+    const options = Object.assign({}, star.options.bulkhead || {}, event.bulkhead || {});
 
     if (options.enabled) {
       const queue: any[] = [];
@@ -232,11 +237,11 @@ const bulkheadMiddleware = (star: Star) => {
         });
 
         return p;
-      }.bind(this);
+      };
     }
 
     return handler;
-  };
+  }
 
   return {
     name: 'Bulkhead',
@@ -267,6 +272,6 @@ const bulkheadMiddleware = (star: Star) => {
     localAction: wrapActionBulkheadMiddleware,
     localEvent: wrapEventBulkheadMiddleware
   };
-};
+}
 
 export default bulkheadMiddleware;

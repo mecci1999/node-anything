@@ -117,7 +117,7 @@ const tracingMiddleware = (star: Star) => {
           });
       };
 
-      return tracingLocalActionMiddleware.bind(this);
+      return tracingLocalActionMiddleware.bind(star);
     }
 
     return handler;
@@ -214,7 +214,7 @@ const tracingMiddleware = (star: Star) => {
           });
       };
 
-      return tracingLocalEventMiddleware.bind(this);
+      return tracingLocalEventMiddleware.bind(star);
     }
 
     return handler;

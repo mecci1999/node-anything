@@ -45,7 +45,7 @@
     "lodash": "^4.17.21",
     "log4js": "^6.9.1",
     "lru-cache": "^10.0.1",
-    "node-fetch": "^3.3.2",
+    "node-fetch": "2.7.0",
     "notepack.io": "^3.0.1",
     "pino": "^8.14.1",
     "recursive-watch": "^1.1.4",

@@ -48,7 +48,7 @@ export default class MiddlewareHandler {
         if (Array.isArray(this.registeredHooks[key])) {
           this.registeredHooks[key].push(middleware[key]);
         } else {
-          this.registeredHooks[key] = middleware[key];
+          this.registeredHooks[key] = [middleware[key]];
         }
       }
     });
@@ -65,7 +65,7 @@ export default class MiddlewareHandler {
    */
   public wrapHandler(method: string, handler: Function, def: Object) {
     if (this.registeredHooks[method] && this.registeredHooks[method].length) {
-      handler = this.registeredHooks[method].reduce((handler, fn) => {
+      handler = this.registeredHooks[method].reduce((handler: any, fn: any) => {
         return fn.call(this.star, handler, def);
       }, handler);
     }
@@ -80,9 +80,9 @@ export default class MiddlewareHandler {
    * @param options
    * @returns
    */
-  public callHandles(method: string, args: Array<any>, options: { reverse: boolean } = { reverse: false }) {
+  public callHandlers(method: string, args: Array<any>, options: GenericObject) {
     if (this.registeredHooks[method] && this.registeredHooks[method].length) {
-      const list = options.reverse ? Array.from(this.registeredHooks[method]).reverse() : this.registeredHooks[method];
+      const list = options?.reverse ? Array.from(this.registeredHooks[method]).reverse() : this.registeredHooks[method];
 
       return list.reduce((p, fn) => {
         p.then(() => fn.apply(this.star, args));
@@ -99,7 +99,7 @@ export default class MiddlewareHandler {
    */
   public callSyncHandlers(method: string, args: Array<any>, options: { reverse?: boolean } = { reverse: false }) {
     if (this.registeredHooks[method] && this.registeredHooks[method].length) {
-      const list = options.reverse ? Array.from(this.registeredHooks[method]).reverse() : this.registeredHooks[method];
+      const list = options?.reverse ? Array.from(this.registeredHooks[method]).reverse() : this.registeredHooks[method];
 
       return list.map((fn) => {
         fn.apply(this.star, args);
@@ -119,12 +119,11 @@ export default class MiddlewareHandler {
   /**
    * 封装一个方法
    */
-  public wrapMethod(method: string, handler: Function, bindTo?: any, options?: { reverse?: boolean }) {
+  public wrapMethod(method: string, handler: Function, bindTo: any = this.star, options?: GenericObject) {
     if (this.registeredHooks[method] && this.registeredHooks[method].length) {
       const list = options?.reverse ? Array.from(this.registeredHooks[method]).reverse() : this.registeredHooks[method];
-      handler = list.reduce((next, fn) => {
-        return fn.call(bindTo, next);
-      }, handler.bind(bindTo));
+
+      handler = list.reduce((next, fn) => fn.call(bindTo, next), handler.bind(bindTo));
     }
 
     return handler;

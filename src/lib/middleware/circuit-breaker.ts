@@ -1,8 +1,13 @@
+/**
+ * 熔断器中间件
+ */
 import C from '../star/constants';
 import { METRIC } from '../metrics';
 import Context from '../context';
 import { GenericObject } from '@/typings';
 import Star from '../star';
+import Endpoint from '../registry/endpoint/item';
+import Service from '../star/service';
 
 const circuitBreakerMiddleware = (star: Star) => {
   let windowTimer: any;
@@ -10,9 +15,7 @@ const circuitBreakerMiddleware = (star: Star) => {
   let logger: any;
 
   /**
-   * Create timer to clear endpoint store
-   *
-   * @param {Number} windowTime
+   * 创建清除定时器
    */
   function createWindowTimer(windowTime: number) {
     if (!windowTimer) {
@@ -42,14 +45,9 @@ const circuitBreakerMiddleware = (star: Star) => {
   }
 
   /**
-   * Get Endpoint state from store. If not exists, create it.
-   *
-   * @param {Endpoint} ep
-   * @param {Service} service
-   * @param {Object} opts
-   * @returns {Object}
+   * 从store中获取节点状态，如果不存在，创建一个
    */
-  function getEpState(ep, service, opts) {
+  function getEpState(ep: Endpoint, service: Service, opts?: GenericObject) {
     let item = store.get(ep.name);
     if (!item) {
       item = {
@@ -67,26 +65,23 @@ const circuitBreakerMiddleware = (star: Star) => {
   }
 
   /**
-   * Increment failure counter
-   *
-   * @param {Object} item
-   * @param {Error} err
-   * @param {Context} ctx
+   * 增加失败请求数量
    */
-  function failure(item, err, ctx) {
+  function failure(item: GenericObject, err: Error, ctx: Context) {
     item.count++;
     item.failures++;
 
+    // 检查是否需要开启熔断器
     checkThreshold(item, ctx);
   }
 
   /**
-   * Increment request counter and switch CB to CLOSE if it is on HALF_OPEN_WAIT.
+   * 如果熔断器处于半开状态，逐步增加请求数量，进行健康检测，如果符合健康条件，则关闭熔断器
    *
    * @param {Object} item
    * @param {Context} ctx
    */
-  function success(item, ctx) {
+  function success(item: GenericObject, ctx: Context) {
     item.count++;
 
     if (item.state === C.CIRCUIT_HALF_OPEN_WAIT) circuitClose(item, ctx);
@@ -94,12 +89,12 @@ const circuitBreakerMiddleware = (star: Star) => {
   }
 
   /**
-   * Check circuit-breaker failure threshold of Endpoint
+   * 检查节点失败次数是否达到熔断器阈值
    *
    * @param {Object} item
    * @param {Context} ctx
    */
-  function checkThreshold(item, ctx) {
+  function checkThreshold(item: GenericObject, ctx: Context) {
     if (item.count >= item.opts.minRequestCount) {
       const rate = item.failures / item.count;
       if (rate >= item.opts.threshold) trip(item, ctx);
@@ -107,7 +102,7 @@ const circuitBreakerMiddleware = (star: Star) => {
   }
 
   /**
-   * Trip the circuit-breaker, change the status to open
+   * 启动熔断机制
    *
    * @param {Object} item
    * @param {Context} ctx
@@ -160,7 +155,7 @@ const circuitBreakerMiddleware = (star: Star) => {
   }
 
   /**
-   * Change circuit-breaker status to half-open
+   * 改变熔断器状态为半开状态
    *
    * @param {Object} item
    * @param {Context} ctx
@@ -202,12 +197,9 @@ const circuitBreakerMiddleware = (star: Star) => {
   }
 
   /**
-   * Change circuit-breaker status to half-open waiting. First request is invoked after half-open.
-   *
-   * @param {Object} item
-   * @param {Context} ctx
+   * 改变熔断器状态至半开状态
    */
-  function halfOpenWait(item, ctx) {
+  function halfOpenWait(item: GenericObject, ctx: Context) {
     item.state = C.CIRCUIT_HALF_OPEN_WAIT;
     item.ep.state = false;
 
@@ -217,7 +209,7 @@ const circuitBreakerMiddleware = (star: Star) => {
   }
 
   /**
-   * Change circuit-breaker status to close
+   * 关闭熔断器
    *
    * @param {Object} item
    * @param {Context} ctx
@@ -260,19 +252,12 @@ const circuitBreakerMiddleware = (star: Star) => {
     }
   }
 
-  /**
-   * Middleware wrapper function
-   *
-   * @param {Function} handler
-   * @param {Action} action
-   * @returns {Function}
-   */
   const wrapCBMiddleware = (handler: any, action: any) => {
     const service = action.service;
     // Merge action option and star options
-    const opts = Object.assign({}, (this as any).options.circuitBreaker || {}, action.circuitBreaker || {});
+    const opts = Object.assign({}, star.options.circuitBreaker || {}, action.circuitBreaker || {});
     if (opts.enabled) {
-      return function circuitBreakerMiddleware(ctx) {
+      return function circuitBreakerMiddleware(ctx: any) {
         // Get endpoint state item
         const ep = ctx.endpoint;
         const item = getEpState(ep, service, opts);
@@ -301,7 +286,7 @@ const circuitBreakerMiddleware = (star: Star) => {
 
             return Promise.reject(err);
           });
-      }.bind(this);
+      };
     }
 
     return handler;
@@ -311,12 +296,15 @@ const circuitBreakerMiddleware = (star: Star) => {
     name: 'CircuitBreaker',
 
     created(star: any) {
+      // 日志模块构建
       logger = star.getLogger('circuit-breaker');
 
       // Expose the internal state store.
       star.CircuitBreakerStore = store;
 
       const opts = star.options.circuitBreaker;
+
+      // 是否开启了熔断机制
       if (opts.enabled) {
         createWindowTimer(opts.windowTime);
 

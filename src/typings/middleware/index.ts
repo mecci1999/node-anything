@@ -1,5 +1,5 @@
 import Service from '@/lib/star/service';
-import { ActionHandler, ActionSchema, CallingOptions } from '../context';
+import { ActionHandler, ActionSchema, CallingOptions, CheckRetryable } from '../context';
 import Star from '@/lib/star';
 import { ServiceEvent } from '../context/event';
 

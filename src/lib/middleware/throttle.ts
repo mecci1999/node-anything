@@ -20,7 +20,7 @@ const throttleMiddleware = (star: Star) => {
         lastInvoke = now;
 
         return handler(ctx);
-      }.bind(this);
+      }.bind(star);
     }
 
     return handler;

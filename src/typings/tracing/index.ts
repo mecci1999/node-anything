@@ -74,3 +74,8 @@ export interface SpanLogEntry {
   time: number;
   elapsed: number;
 }
+
+export interface StarTrackingOptions {
+  enabled?: boolean;
+  shutdownTimeout?: number;
+}

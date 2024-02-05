@@ -12,8 +12,9 @@ import path from 'path';
 import watch from 'recursive-watch';
 import _ from 'lodash';
 import { clearRequireCache, isFunction, isString, makeDirs } from '@/utils';
+import Star from '../star';
 
-export default function HotReloadMiddleware(star) {
+export default function HotReloadMiddleware(star: Star) {
   const cache = new Map();
 
   let projectFiles = new Map();
@@ -24,14 +25,14 @@ export default function HotReloadMiddleware(star) {
   function hotReloadService(service) {
     const relPath = path.relative(process.cwd(), service.__filename);
 
-    star.logger.info(`Hot reload '${service.name}' service...`, kleur.grey(relPath));
+    star.logger?.info(`Hot reload '${service.name}' service...`, kleur.grey(relPath));
 
     return star.destroyService(service).then(() => {
       if (fs.existsSync(service.__filename)) {
         try {
           return star.loadService(service.__filename);
         } catch (err) {
-          star.logger.error(`Failed to load service '${service.__filename}'`, err);
+          star.logger?.error(`Failed to load service '${service.__filename}'`, err);
           clearRequireCache(service.__filename);
         }
       }
@@ -75,7 +76,7 @@ export default function HotReloadMiddleware(star) {
         return ac == bc;
       });
 
-      star.logger.info(kleur.bgMagenta().white().bold(`Reload ${needToReloadDedup.length} service(s)`));
+      star.logger?.info(kleur.bgMagenta().white().bold(`Reload ${needToReloadDedup.length} service(s)`));
 
       needToReloadDedup.forEach((svc) => {
         if (typeof svc == 'string')
@@ -91,8 +92,8 @@ export default function HotReloadMiddleware(star) {
     stopAllFileWatcher(prevProjectFiles);
 
     // Watching project files
-    star.logger.debug('');
-    star.logger.debug(kleur.yellow().bold('Watching the following project files:'));
+    star.logger?.debug('');
+    star.logger?.debug(kleur.yellow().bold('Watching the following project files:'));
 
     projectFiles.forEach((watchItem, fName) => {
       // Delete if file doesn't exist anymore
@@ -101,24 +102,24 @@ export default function HotReloadMiddleware(star) {
 
     projectFiles.forEach((watchItem, fName) => {
       const relPath = path.relative(process.cwd(), fName);
-      if (watchItem.starRestart) star.logger.debug(`  ${relPath}:`, kleur.grey('restart star.'));
-      else if (watchItem.allServices) star.logger.debug(`  ${relPath}:`, kleur.grey('reload all services.'));
+      if (watchItem.starRestart) star.logger?.debug(`  ${relPath}:`, kleur.grey('restart star.'));
+      else if (watchItem.allServices) star.logger?.debug(`  ${relPath}:`, kleur.grey('reload all services.'));
       else if (watchItem.services.length > 0) {
-        star.logger.debug(
+        star.logger?.debug(
           `  ${relPath}:`,
           kleur.grey(
             `reload ${watchItem.services.length} service(s) & ${watchItem.others.length} other(s).`
           ) /*, watchItem.services, watchItem.others*/
         );
-        watchItem.services.forEach((svcFullname) => star.logger.debug(kleur.grey(`    ${svcFullname}`)));
+        watchItem.services.forEach((svcFullname) => star.logger?.debug(kleur.grey(`    ${svcFullname}`)));
         watchItem.others.forEach((filename) =>
-          star.logger.debug(kleur.grey(`    ${path.relative(process.cwd(), filename)}`))
+          star.logger?.debug(kleur.grey(`    ${path.relative(process.cwd(), filename)}`))
         );
       }
       // Create watcher
       watchItem.watcher = fs.watch(fName, (eventType) => {
         const relPath = path.relative(process.cwd(), fName);
-        star.logger.info(kleur.magenta().bold(`The '${relPath}' file is changed. (Event: ${eventType})`));
+        star.logger?.info(kleur.magenta().bold(`The '${relPath}' file is changed. (Event: ${eventType})`));
 
         // Clear from require cache
         clearRequireCache(fName);
@@ -126,17 +127,17 @@ export default function HotReloadMiddleware(star) {
           watchItem.others.forEach((f) => clearRequireCache(f));
         }
 
-        if (watchItem.starRestart && star.runner && isFunction(star.runner.restartstar)) {
-          star.logger.info(kleur.bgMagenta().white().bold('Action: Restart star...'));
+        if (watchItem.starRestart && (star as any).runner && isFunction((star as any).runner.restartstar)) {
+          star.logger?.info(kleur.bgMagenta().white().bold('Action: Restart star...'));
           stopAllFileWatcher(projectFiles);
           // Clear the whole require cache
           Object.keys(require.cache).forEach((key) => delete require.cache[key]);
 
-          return star.runner.restartstar();
+          return (star as any).runner.restartstar();
         } else if (watchItem.allServices) {
           // Reload all services
           star.services.forEach((svc) => {
-            if (svc.__filename) needToReload.add(svc);
+            if ((svc as any).__filename) needToReload.add(svc);
           });
           reloadServices();
         } else if (watchItem.services.length > 0) {
@@ -157,7 +158,7 @@ export default function HotReloadMiddleware(star) {
       });
     });
 
-    if (projectFiles.size == 0) star.logger.debug(kleur.grey('  No files.'));
+    if (projectFiles.size == 0) star.logger?.debug(kleur.grey('  No files.'));
   }
 
   const debouncedWatchProjectFiles = _.debounce(watchProjectFiles, 2000);
@@ -229,7 +230,7 @@ export default function HotReloadMiddleware(star) {
     }
 
     if (!service) {
-      service = star.services.find((svc) => svc.__filename == fName);
+      service = star.services.find((svc: any) => svc.__filename == fName);
     }
 
     if (service) {
@@ -270,40 +271,40 @@ export default function HotReloadMiddleware(star) {
     // Debounced Service loader function
     const needToLoad = new Set();
     const loadServices = _.debounce(() => {
-      star.logger.info(kleur.bgMagenta().white().bold(`Load ${needToLoad.size} service(s)...`));
+      star.logger?.info(kleur.bgMagenta().white().bold(`Load ${needToLoad.size} service(s)...`));
 
       needToLoad.forEach((filename: any) => {
         try {
           star.loadService(filename);
         } catch (err) {
-          star.logger.error(`Failed to load service '${filename}'`, err);
+          star.logger?.error(`Failed to load service '${filename}'`, err);
           clearRequireCache(filename);
         }
       });
       needToLoad.clear();
     }, 500);
 
-    if (star.runner && Array.isArray(star.runner.folders)) {
-      const folders = star.runner.folders;
+    if ((star as any).runner && Array.isArray((star as any).runner.folders)) {
+      const folders = (star as any).runner.folders;
       if (folders.length > 0) {
         folderWatchers.length = 0;
 
-        star.logger.debug('');
-        star.logger.debug(kleur.yellow().bold('Watching the following folder(s):'));
+        star.logger?.debug('');
+        star.logger?.debug(kleur.yellow().bold('Watching the following folder(s):'));
 
         folders.forEach((folder) => {
           makeDirs(folder);
-          star.logger.debug(`  ${path.relative(process.cwd(), folder)}/`);
+          star.logger?.debug(`  ${path.relative(process.cwd(), folder)}/`);
           folderWatchers.push({
             path: folder,
             watcher: watch(folder, (filename) => {
               if (filename.endsWith('.service.js') || filename.endsWith('.service.ts')) {
-                star.logger.debug(`There is changes in '${folder}' folder: `, path.basename(filename));
-                const isLoaded = star.services.some((svc) => svc.__filename == filename);
+                star.logger?.debug(`There is changes in '${folder}' folder: `, path.basename(filename));
+                const isLoaded = star.services.some((svc: any) => svc.__filename == filename);
                 const fileExists = fs.existsSync(filename);
                 if (!isLoaded && fileExists) {
                   // This is a new file. We should wait for the file fully copied.
-                  star.logger.debug('Loading new file: ', path.basename(filename));
+                  star.logger?.debug('Loading new file: ', path.basename(filename));
                   needToLoad.add(filename);
                   loadServices();
                 }
@@ -316,8 +317,8 @@ export default function HotReloadMiddleware(star) {
   }
 
   function stopProjectFolderWatchers() {
-    star.logger.debug('');
-    star.logger.debug('Stop watching folders.');
+    star.logger?.debug('');
+    star.logger?.debug('Stop watching folders.');
     folderWatchers.forEach((item) => item.watcher && item.watcher());
   }
 

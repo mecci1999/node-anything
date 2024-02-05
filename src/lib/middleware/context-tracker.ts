@@ -25,10 +25,10 @@ const contextTrackerMiddleware = (star: Star) => {
     }
   }
 
-  const wrapTrackerMiddleware = (handler: any) => {
-    if ((this as any).options.tracking && (this as any).options.tracking.enabled) {
-      const ContextTrackerMiddleware = (ctx: Context) => {
-        const tracked = ctx.options.tracking !== null ? ctx.options.tracking : (this as any).options.tracking.enabled;
+  function wrapTrackerMiddleware(handler: any) {
+    if (star.options.tracking && star.options.tracking.enabled) {
+      return function ContextTrackerMiddleware(ctx: Context) {
+        const tracked = ctx.options.tracking !== null ? ctx.options.tracking : star.options.tracking?.enabled;
 
         if (!tracked) {
           return handler(ctx);
@@ -50,12 +50,10 @@ const contextTrackerMiddleware = (star: Star) => {
 
         return p;
       };
-
-      return ContextTrackerMiddleware.bind(this);
     }
 
     return handler;
-  };
+  }
 
   function waitingForActiveContexts(list: any[], logger: any, time: number, service?: any): Promise<void> {
     if (!list || list.length === 0) return Promise.resolve();

@@ -1169,7 +1169,7 @@ export default class Star {
    * 在所有的中间件中使用异步通信处理器
    */
   public callMiddlewareHook(name: string, args: Array<any>, options?: any) {
-    return this.middlewares?.callHandles(name, args, options);
+    return this.middlewares?.callHandlers(name, args, options);
   }
 
   /**

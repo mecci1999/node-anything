@@ -45,7 +45,7 @@ const timeoutHandlerMiddleware = (star: Star) => {
       }
 
       return p;
-    }.bind(this);
+    }.bind(star);
   };
 
   return {

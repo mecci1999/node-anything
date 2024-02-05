@@ -3,8 +3,8 @@ import BaseTraceExporter from './base';
 import _ from 'lodash';
 import Span from '../span';
 import Tracer from '../tracer';
-import fetch from 'node-fetch';
 import { isFunction } from '@/utils';
+import fetch from 'node-fetch';
 
 export default class ZipkinTraceExporter extends BaseTraceExporter {
   public queue: Array<Span>;

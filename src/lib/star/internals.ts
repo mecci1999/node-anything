@@ -58,7 +58,7 @@ export default function (star: Star) {
             default: false
           },
           onlyAvailable: {
-            type: 'boodeflean',
+            type: 'boolean',
             optional: true,
             convert: true,
             default: false
@@ -150,17 +150,17 @@ export default function (star: Star) {
           types: {
             type: 'multi',
             optional: true,
-            rules: [{ type: 'string' }, { type: 'array' }, { items: 'string' }]
+            rules: [{ type: 'string' }, { type: 'array', items: 'string' }]
           },
           includes: {
             type: 'multi',
             optional: true,
-            rules: [{ type: 'string' }, { type: 'array' }, { items: 'string' }]
+            rules: [{ type: 'string' }, { type: 'array', items: 'string' }]
           },
           excludes: {
             type: 'multi',
             optional: true,
-            rules: [{ type: 'string' }, { type: 'array' }, { items: 'string' }]
+            rules: [{ type: 'string' }, { type: 'array', items: 'string' }]
           }
         },
         handler(ctx: Context) {

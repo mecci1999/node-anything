@@ -1,7 +1,7 @@
 import { actionHookMiddleware } from './action-hook';
 import bulkheadMiddleware from './bulkhead';
 import cacherMiddleware from './cacher';
-import circuitBreakerMiddleware from './circuit-tracker';
+import circuitBreakerMiddleware from './circuit-breaker';
 import contextTrackerMiddleware from './context-tracker';
 import debounceMiddleware from './debounce';
 import errorHandlerMiddleware from './error-handler';
@@ -18,7 +18,7 @@ const Middlewares = {
   ActionHook: actionHookMiddleware,
   Bulkhead: bulkheadMiddleware,
   Cacher: cacherMiddleware,
-  CircuitTracker: circuitBreakerMiddleware,
+  CircuitBreaker: circuitBreakerMiddleware,
   ContextTracker: contextTrackerMiddleware,
   Debounce: debounceMiddleware,
   ErrorHandler: errorHandlerMiddleware,

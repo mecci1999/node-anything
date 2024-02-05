@@ -58,7 +58,7 @@ const FallbackMiddleware = (star: Star) => {
       });
     };
 
-    return FallbackMiddleware.bind(this);
+    return FallbackMiddleware.bind(star);
   };
 
   return {

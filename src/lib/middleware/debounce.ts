@@ -20,7 +20,7 @@ const debounceMiddleware = (star: Star) => {
         }, event.debounce);
 
         return Promise.resolve();
-      }.bind(this);
+      }.bind(star);
     }
 
     return handler;

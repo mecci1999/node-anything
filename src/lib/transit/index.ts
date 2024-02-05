@@ -450,7 +450,7 @@ export default class Transit {
       }
 
       let pass: any;
-      if (payload.stream !== undefined) {
+      if (payload.stream != undefined) {
         // 如果请求中存在流，调用处理请求流的方法
         pass = this._handleIncomingRequestStream(payload);
         if (pass === null) return Promise.resolve();
@@ -1199,7 +1199,7 @@ export default class Transit {
   /**
    * 移除等待处理的请求
    */
-  private removePendingRequest(id: any) {
+  public removePendingRequest(id: any) {
     this.pendingRequests.delete(id);
     this.pendingReqStreams.delete(id);
     this.pendingResStreams.delete(id);

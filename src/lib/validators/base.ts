@@ -52,7 +52,7 @@ export default class BaseValidator {
     const processCheckResponse = function (ctx: Context, handler: ActionHandler, res: any, additionalInfo: any) {
       if (res === true) return handler(ctx);
       else {
-        res = res.map((data) => Object.assign(data, additionalInfo));
+        res = res.map((data: any) => Object.assign(data, additionalInfo));
 
         return Promise.reject(new ValidationError('Parameters validation error!', undefined, res));
       }
