@@ -1,5 +1,5 @@
 /**
- * 隔离机制
+ * 隔离中间件
  */
 
 import Context from '../context';

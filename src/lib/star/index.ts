@@ -601,7 +601,7 @@ export default class Star {
    * 动作通信
    */
   public call(actionName: string, params?: GenericObject, options?: GenericObject): Promise<any> {
-    if (params === undefined) params = {};
+    if (params == undefined) params = {};
 
     // 创建上下文
     let ctx: Context;

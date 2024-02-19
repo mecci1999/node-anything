@@ -2,15 +2,20 @@ const Univserse = require('../../dist/index');
 const testData = require('./testJson');
 
 // 微服务数
-const count = 50;
+const count = 3;
 
 const star = new Univserse.Star({
   namespace: 'kafka-demo',
   transporter: {
     type: 'KAFKA',
     debug: true,
-    host: '0.0.0.0:9092'
-  }
+    host: 'localhost:9092'
+  },
+  // tracking: {
+  //   enabled: true,
+  //   type: 'zipkin',
+  //   shutdownTimeout: 5000,
+  // },
 });
 
 for (let i = 1; i < count; i++) {

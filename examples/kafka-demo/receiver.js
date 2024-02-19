@@ -6,8 +6,13 @@ const star = new Univserse.Star({
   transporter: {
     type: 'KAFKA',
     debug: true,
-    host: '0.0.0.0:9092'
-  }
+    host: 'localhost:9092'
+  },
+  // tracking: {
+  //   enabled: true,
+  //   type: 'zipkin',
+  //   shutdownTimeout: 5000,
+  // },
 });
 
 // 创建网关服务

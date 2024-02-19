@@ -25,7 +25,7 @@ const timeoutHandlerMiddleware = (star: Star) => {
       if ((ctx.options.timeout as number) > 0 && !ctx.starHrTime) {
         ctx.starHrTime = process.hrtime();
       }
-
+      console.log(`------------ timeout ------------`, handler, action);
       const p = handler(ctx) as Promise<any>;
       if ((ctx.options.timeout as number) > 0) {
         return promiseTimeout(p, ctx.options.timeout as number).catch((err) => {
