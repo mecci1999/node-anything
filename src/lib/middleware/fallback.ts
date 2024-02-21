@@ -4,7 +4,7 @@ import { METRIC } from '../metrics';
 import Star from '../star';
 import { UniverseError } from '../error';
 
-const FallbackMiddleware = (star: Star) => {
+export default function FallbackMiddleware(star: Star) {
   function handleContextFallback(ctx: Context, err: Error) {
     star.logger?.warn(`The '${ctx.action?.name}' request is failed. Return fallback response.`, {
       requestID: ctx.requestID,
@@ -79,6 +79,4 @@ const FallbackMiddleware = (star: Star) => {
     localAction: wrapFallbackMiddleware,
     remoteAction: wrapFallbackMiddleware
   };
-};
-
-export default FallbackMiddleware;
+}

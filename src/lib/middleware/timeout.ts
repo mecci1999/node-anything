@@ -7,8 +7,8 @@ import Star from '../star';
 /**
  * 超时处理
  */
-const timeoutHandlerMiddleware = (star: Star) => {
-  const wrapTimeoutMiddleware = (handler: any, action: any) => {
+export default function (star: Star) {
+  function wrapTimeoutMiddleware(handler: any, action: any) {
     const actionTimeout = action?.timeout;
     const actionName = action?.name;
     const service = action.service ? action.service.fullName : null;
@@ -25,8 +25,9 @@ const timeoutHandlerMiddleware = (star: Star) => {
       if ((ctx.options.timeout as number) > 0 && !ctx.starHrTime) {
         ctx.starHrTime = process.hrtime();
       }
-      console.log(`------------ timeout ------------`, handler, action);
+
       const p = handler(ctx) as Promise<any>;
+
       if ((ctx.options.timeout as number) > 0) {
         return promiseTimeout(p, ctx.options.timeout as number).catch((err) => {
           if (err) {
@@ -46,7 +47,7 @@ const timeoutHandlerMiddleware = (star: Star) => {
 
       return p;
     }.bind(star);
-  };
+  }
 
   return {
     name: 'Timeout',
@@ -64,6 +65,4 @@ const timeoutHandlerMiddleware = (star: Star) => {
     localAction: wrapTimeoutMiddleware,
     remoteAction: wrapTimeoutMiddleware
   };
-};
-
-export default timeoutHandlerMiddleware;
+}

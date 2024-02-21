@@ -377,6 +377,8 @@ export default class BaseCacher {
             }
           };
         }
+
+        return handler;
       }
     };
   }
