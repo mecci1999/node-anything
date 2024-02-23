@@ -8,11 +8,12 @@ const star = new Univserse.Star({
     debug: true,
     host: 'localhost:9092'
   },
-  // tracking: {
-  //   enabled: true,
-  //   type: 'zipkin',
-  //   shutdownTimeout: 5000,
-  // },
+  tracing: {
+    enabled: true,
+    exporter: {
+      type: 'NewRelic'
+    }
+  }
 });
 
 // 创建网关服务

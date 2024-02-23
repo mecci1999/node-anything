@@ -17,7 +17,7 @@ export default class NewRelicTraceExporter extends BaseTraceExporter {
     this.options = _.defaultsDeep(this.options, {
       baseURL: 'https://trace-api.newrelic.com',
       interval: 5,
-      insertKey: '', // NewRelic Insert API Key
+      insertKey: 'NRAK-EC555B8OTTUIXMLXHQ05SB0GEQG', // NewRelic Insert API Key
       payloadOptions: {
         debug: false,
         shared: false
@@ -79,7 +79,7 @@ export default class NewRelicTraceExporter extends BaseTraceExporter {
     })
       .then((res) => {
         if (res.status >= 400) {
-          this.logger?.warn(`Unable to upload tracing spans to Zipkin. Status: ${res.status} ${res.statusText}`);
+          this.logger?.warn(`Unable to upload tracing spans to NewRelic. Status: ${res.status} ${res.statusText}`);
         } else {
           this.logger?.debug(
             `Tracing spans (${data.length} spans) are uploaded to NewRelic. Status: ${res.statusText}`

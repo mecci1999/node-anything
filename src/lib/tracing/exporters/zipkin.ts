@@ -6,6 +6,9 @@ import Tracer from '../tracer';
 import { isFunction } from '@/utils';
 import fetch from 'node-fetch';
 
+/**
+ * API v2: https://zipkin.io/zipkin-api/#/
+ */
 export default class ZipkinTraceExporter extends BaseTraceExporter {
   public queue: Array<Span>;
   public timer: any;
@@ -70,9 +73,9 @@ export default class ZipkinTraceExporter extends BaseTraceExporter {
     this.queue.length = 0; // 清除队列，避免重复上传
 
     fetch(`${this.options.baseURL}/api/v2/spans`, {
-      method: 'post',
+      method: 'POST',
       body: JSON.stringify(data),
-      headers: this.options.headers
+      headers: this.options.headers,
     })
       .then((res) => {
         if (res.status >= 400) {
@@ -82,7 +85,7 @@ export default class ZipkinTraceExporter extends BaseTraceExporter {
         }
       })
       .catch((err) => {
-        this.logger?.warn(`Unable tp upload tracing spans to Zipkin.Error:` + err.message, err);
+        this.logger?.warn(`Unable tp upload tracing spans to Zipkin. Error:` + err.message, err);
       });
   }
 

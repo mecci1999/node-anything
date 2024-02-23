@@ -45,6 +45,7 @@ import { format } from 'util';
 import { Validator } from '@/typings/validator';
 import kleur from 'kleur';
 import Tracer from '../tracing/tracer';
+import { glob } from 'glob';
 
 // 默认选项
 const defaultOptions = {
@@ -1527,7 +1528,14 @@ export default class Star {
     if (Array.isArray(fileMask)) {
       servicesFiles = fileMask.map((f) => path.join(folder, f));
     } else {
+      servicesFiles = glob.sync(path.join(folder, fileMask));
     }
+
+    if(servicesFiles) {
+      servicesFiles.forEach(filename => this.loadService(filename));
+    }
+
+    return servicesFiles.length;
   }
 
   /**
