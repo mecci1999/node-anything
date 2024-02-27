@@ -13,6 +13,8 @@ import { Registry } from './lib/registry';
 import Discoverers from './lib/registry/discoverers';
 import Middleware from './lib/middleware';
 import Errors from './lib/error/error';
+import Validators from './lib/validators';
+import TracerExporters from './lib/tracing/exporters';
 
 export default {
   Star,
@@ -23,6 +25,8 @@ export default {
   Transporters,
   Serializers,
   Strategies,
+  Validators,
+  TracerExporters,
   MetricRegistry,
   METRIC,
   Reporters,
