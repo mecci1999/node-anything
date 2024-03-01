@@ -61,28 +61,28 @@ export default class Registry {
     this.updateMetrics();
 
     // 每隔一分钟，打印当前节点注册表中的所有信息
-    setInterval(() => {
-      // 输出注册的节点信息
-      const nodes = this.getNodeList({ onlyAvaiable: false, withServices: false }).map((item) => {
-        return {
-          key: item.id,
-          value: item.available
-        };
-      });
-      // const services = this.getServiceList({
-      //   onlyLocal: false,
-      //   onlyAvaliable: false,
-      //   skipInterval: false,
-      //   withActions: false,
-      //   withEvents: false,
-      //   grouping: false
-      // }).map(item => {
-      //   key: item.
-      // });
-      this.logger.debug(`---------- 服务注册表 -----------`);
-      this.printLogger('节点ID', nodes);
-      // this.printLogger('服务列表', nodes);
-    }, 30 * 1000);
+    // setInterval(() => {
+    //   // 输出注册的节点信息
+    //   const nodes = this.getNodeList({ onlyAvaiable: false, withServices: false }).map((item) => {
+    //     return {
+    //       key: item.id,
+    //       value: item.available
+    //     };
+    //   });
+    //   // const services = this.getServiceList({
+    //   //   onlyLocal: false,
+    //   //   onlyAvaliable: false,
+    //   //   skipInterval: false,
+    //   //   withActions: false,
+    //   //   withEvents: false,
+    //   //   grouping: false
+    //   // }).map(item => {
+    //   //   key: item.
+    //   // });
+    //   this.logger.debug(`---------- 服务注册表 -----------`);
+    //   this.printLogger('节点ID', nodes);
+    //   // this.printLogger('服务列表', nodes);
+    // }, 30 * 1000);
   }
 
   /**
