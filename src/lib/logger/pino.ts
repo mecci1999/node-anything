@@ -33,7 +33,7 @@ export class PinoLogger extends BaseLogger {
 
     try {
       this.pino = Pino(
-        this.options.pino && this.options.options ? this.options.pino.options : undefined,
+        this.options.pino && this.options.pino.options ? this.options.pino.options : undefined,
         this.options.pino && this.options.pino.destination ? this.options.pino.destination : undefined
       );
     } catch (error) {
