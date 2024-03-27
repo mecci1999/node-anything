@@ -1,8 +1,9 @@
 {
   "name": "node-universe",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "module":"dist/index.esm.js",
   "scripts": {
     "test:client": "yarn build && node examples/client.js",
     "build": "rm -rf ./dist && rollup -c rollup.config.js"

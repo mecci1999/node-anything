@@ -10,14 +10,16 @@ const wrapActionErrorHandler = (handler: any, bind: any) => {
   const errorHandlerMiddleware = (ctx: Context) => {
     return handler(ctx).catch((err) => {
       if (!(err instanceof Error)) err = new UniverseError(err, UniverseErrorCode.SERVICE_ERROR);
-
-      if (ctx.nodeID !== bind.star.nodeID) {
-        if (bind.star.transit) {
-          bind.star.transit?.removePendingRequest(ctx.id);
+      if (ctx.nodeID !== bind.service?.star?.nodeID) {
+        if (bind.service?.star?.transit) {
+          bind.service?.star?.removePendingRequest(ctx.id);
         }
       }
 
-      bind.star.logger?.debug(`The '${ctx.action?.name}' request is rejected.`, { requestID: ctx.parentID, err });
+      bind.service?.star?.logger?.debug(`The '${ctx.action?.name}' request is rejected.`, {
+        requestID: ctx.parentID,
+        err
+      });
 
       Object.defineProperty(err, 'ctx', { value: ctx, writable: true, enumerable: false });
 
@@ -25,16 +27,19 @@ const wrapActionErrorHandler = (handler: any, bind: any) => {
     });
   };
 
-  return errorHandlerMiddleware.bind(bind.star);
+  return errorHandlerMiddleware.bind(bind.service?.star);
 };
 
-const wrapEventErrorHandler = (handler: any, star: Star) => {
+const wrapEventErrorHandler = (handler: any, bind: any) => {
   const errorHandlerMiddleware = (ctx: Context) => {
     return handler(ctx)
       .catch((err) => {
         if (!(err instanceof Error)) err = new UniverseError(err, UniverseErrorCode.SERVICE_ERROR);
 
-        star.logger?.debug(`The '${ctx.action?.name}' request is rejected.`, { requestID: ctx.parentID, err });
+        bind?.service?.star?.logger?.debug(`The '${ctx.action?.name}' request is rejected.`, {
+          requestID: ctx.parentID,
+          err
+        });
 
         Object.defineProperty(err, 'ctx', { value: ctx, writable: true, enumerable: false });
 
@@ -45,7 +50,7 @@ const wrapEventErrorHandler = (handler: any, star: Star) => {
       });
   };
 
-  return errorHandlerMiddleware.bind(star);
+  return errorHandlerMiddleware.bind(bind.service?.star);
 };
 
 export default function () {
