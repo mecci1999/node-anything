@@ -137,7 +137,7 @@ export default {
 
   UNIVERSE_EVENT_EMIT_TOTAL: 'universe.event.emit.total',
   UNIVERSE_EVENT_BROADCAST_TOTAL: 'universe.event.broadcast.total',
-  UNIVERSE_EVENT_BROADCASTLOCAL_TOTAL: 'universe.event.broadcast-local.total',
+  UNIVERSE_EVENT_BROADCASTLOCAL_TOTAL: 'universe.event.broadcast_local.total',
   UNIVERSE_EVENT_RECEIVED_TOTAL: 'universe.event.received.total',
   UNIVERSE_EVENT_RECEIVED_ACTIVE: 'universe.event.received.active',
   UNIVERSE_EVENT_RECEIVED_ERROR_TOTAL: 'universe.event.received.error.total',
@@ -155,7 +155,7 @@ export default {
   UNIVERSE_TRANSIT_CONNECTED: 'universe.transit.connected', // true/false
 
   UNIVERSE_TRANSIT_PONG_TIME: 'universe.transit.pong.time', // true/false
-  UNIVERSE_TRANSIT_PONG_SYSTIME_DIFF: 'universe.transit.pong.systime-diff', // true/false
+  UNIVERSE_TRANSIT_PONG_SYSTIME_DIFF: 'universe.transit.pong.systime_diff', // true/false
 
   UNIVERSE_TRANSIT_ORPHAN_RESPONSE_TOTAL: 'universe.transit.orphan.response.total',
 
@@ -168,9 +168,9 @@ export default {
 
   // --- UNIVERSE CIRCUIT STAR METRICS ---
 
-  UNIVERSE_CIRCUIT_STAR_OPENED_ACTIVE: 'universe.circuit-star.opened.active',
-  UNIVERSE_CIRCUIT_STAR_OPENED_TOTAL: 'universe.circuit-star.opened.total',
-  UNIVERSE_CIRCUIT_STAR_HALF_OPENED_ACTIVE: 'universe.circuit-star.half-opened.active',
+  UNIVERSE_CIRCUIT_STAR_OPENED_ACTIVE: 'universe.circuit_star.opened.active',
+  UNIVERSE_CIRCUIT_STAR_OPENED_TOTAL: 'universe.circuit_star.opened.total',
+  UNIVERSE_CIRCUIT_STAR_HALF_OPENED_ACTIVE: 'universe.circuit_star.half_opened.active',
 
   // --- UNIVERSE FALLBACK METRICS ---
 
