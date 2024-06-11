@@ -56,12 +56,14 @@ export default class PrometheusReporter extends BaseReporter {
     // 创建一个http服务
     this.server = http.createServer();
     this.server.on('request', this.handler.bind(this));
-    this.server.listen(this.options.port, () => {
-      this.registry?.star.fatal(
+    this.server.on('error', error => {
+      return this.registry?.star.fatal(
         'Prometheus metric reporter listening error:',
-        new UniverseError('Prometheus metric reporter listening error:')
+        new UniverseError('Prometheus metric reporter listening error:' + error.message)
       );
+    })
 
+    this.server.listen(this.options.port, () => {
       this.logger?.info(
         `Prometheus metric reporter listening on http://0.0.0.0:${this.options.port}${this.options.path} address.`
       );
