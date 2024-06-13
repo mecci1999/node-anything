@@ -232,7 +232,7 @@ export default function metricsHandlerMiddleware(star: Star) {
       const service = event.service ? event.service.name : null;
       const group = event.group || service;
 
-      const handleMetrics = (ctx: Context) => {
+      const metricsMiddleware = (ctx: Context) => {
         metrics?.increment(METRIC.UNIVERSE_EVENT_RECEIVED_TOTAL, {
           service,
           event: ctx.eventName,
@@ -289,7 +289,7 @@ export default function metricsHandlerMiddleware(star: Star) {
       };
 
       if (star.isMetricsEnabled()) {
-        return handleMetrics.bind(this);
+        return metricsMiddleware;
       }
 
       return next;
@@ -297,12 +297,12 @@ export default function metricsHandlerMiddleware(star: Star) {
 
     emit(next: any) {
       if (star.isMetricsEnabled()) {
-        const metricsMiddleware = () => {
-          metrics?.increment(METRIC.UNIVERSE_EVENT_EMIT_TOTAL, { event: arguments[0] });
-          return next.apply(this, arguments);
+        const metricsMiddleware = (...args: any[]) => {
+          metrics?.increment(METRIC.UNIVERSE_EVENT_EMIT_TOTAL, { event: args[0] });
+          return next.apply(this, args);
         };
 
-        return metricsMiddleware.bind(this);
+        return metricsMiddleware;
       }
 
       return next;
@@ -310,12 +310,12 @@ export default function metricsHandlerMiddleware(star: Star) {
 
     broadcast(next: any) {
       if (star.isMetricsEnabled()) {
-        const metricsMiddleware = () => {
-          metrics?.increment(METRIC.UNIVERSE_EVENT_BROADCAST_TOTAL, { event: arguments[0] });
-          return next.apply(this, arguments);
+        const metricsMiddleware = (...args: any[]) => {
+          metrics?.increment(METRIC.UNIVERSE_EVENT_BROADCAST_TOTAL, { event: args[0] });
+          return next.apply(this, args);
         };
 
-        return metricsMiddleware.bind(this);
+        return metricsMiddleware;
       }
 
       return next;
@@ -323,12 +323,12 @@ export default function metricsHandlerMiddleware(star: Star) {
 
     broadcastLocal(next: any) {
       if (star.isMetricsEnabled()) {
-        const metricsMiddleware = () => {
-          metrics?.increment(METRIC.UNIVERSE_EVENT_BROADCASTLOCAL_TOTAL, { event: arguments[0] });
-          return next.apply(this, arguments);
+        const metricsMiddleware = (...args: any[]) => {
+          metrics?.increment(METRIC.UNIVERSE_EVENT_BROADCASTLOCAL_TOTAL, { event: args[0] });
+          return next.apply(this, args);
         };
 
-        return metricsMiddleware.bind(this);
+        return metricsMiddleware;
       }
 
       return next;
@@ -338,14 +338,14 @@ export default function metricsHandlerMiddleware(star: Star) {
       const transit = this as any;
       if (star.isMetricsEnabled()) {
         const metricsMiddleware = (...args: any[]) => {
-          metrics?.increment(METRIC.UNIVERSE_TRANSIT_PUBLISH_TOTAL, { type: arguments[0].type });
+          metrics?.increment(METRIC.UNIVERSE_TRANSIT_PUBLISH_TOTAL, { type: args[0].type });
 
           const p = next.apply(this, args);
-          metrics?.increment(METRIC.UNIVERSE_TRANSIT_REQUESTS_ACTIVE, null, transit.pendingRequests.size);
+          metrics?.increment(METRIC.UNIVERSE_TRANSIT_REQUESTS_ACTIVE, null, transit.pendingRequests?.size || 0);
           metrics?.increment(
             METRIC.UNIVERSE_TRANSIT_STREAMS_SEND_ACTIVE,
             null,
-            transit.pendingReqStreams.size + (this as any).pendingResStream.size
+            (transit.pendingReqStreams?.size || 0) + ((this as any).pendingResStream?.size || 0)
           );
 
           return p;
@@ -359,12 +359,12 @@ export default function metricsHandlerMiddleware(star: Star) {
 
     transitMessageHandler(next: any) {
       if (star.isMetricsEnabled()) {
-        const metricsMiddleware = () => {
-          metrics?.increment(METRIC.UNIVERSE_TRANSIT_RECEIVE_TOTAL, { type: arguments[0] });
-          return next.apply(this, arguments);
+        const metricsMiddleware = (...args: any[]) => {
+          metrics?.increment(METRIC.UNIVERSE_TRANSIT_RECEIVE_TOTAL, { type: args[0] });
+          return next.apply(this, args);
         };
 
-        return metricsMiddleware.bind(this);
+        return metricsMiddleware;
       }
 
       return next;
@@ -372,8 +372,8 @@ export default function metricsHandlerMiddleware(star: Star) {
 
     transporterSend(next: any) {
       if (star.isMetricsEnabled()) {
-        const metricsMiddleware = () => {
-          const data = arguments[1];
+        const metricsMiddleware = (...args: any[]) => {
+          const data = args[1];
           metrics?.increment(METRIC.UNIVERSE_TRANSPORTER_PACKETS_SENT_TOTAL);
           metrics?.increment(
             METRIC.UNIVERSE_TRANSPORTER_PACKETS_SENT_BYTES,
@@ -381,10 +381,10 @@ export default function metricsHandlerMiddleware(star: Star) {
             data && data.length ? data.length : 0
           );
 
-          return next.apply(this, arguments);
+          return next.apply(this, args);
         };
 
-        return metricsMiddleware.bind(this);
+        return metricsMiddleware;
       }
 
       return next;
@@ -392,8 +392,8 @@ export default function metricsHandlerMiddleware(star: Star) {
 
     transporterReceive(next: any) {
       if (star.isMetricsEnabled()) {
-        const metricsMiddleware = () => {
-          const data = arguments[1];
+        const metricsMiddleware = (...args: any[]) => {
+          const data = args[1];
           metrics?.increment(METRIC.UNIVERSE_TRANSPORTER_PACKETS_RECEIVED_TOTAL);
           metrics?.increment(
             METRIC.UNIVERSE_TRANSPORTER_PACKETS_RECEIVED_BYTES,
@@ -401,10 +401,10 @@ export default function metricsHandlerMiddleware(star: Star) {
             data && data.length ? data.length : 0
           );
 
-          return next.apply(this, arguments);
+          return next.apply(this, args);
         };
 
-        return metricsMiddleware.bind(this);
+        return metricsMiddleware;
       }
 
       return next;
