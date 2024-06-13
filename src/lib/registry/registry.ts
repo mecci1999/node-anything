@@ -176,7 +176,7 @@ export default class Registry {
     });
     this.metrics?.set(METRIC.UNIVERSE_REGISTRY_SERVICES_TOTAL, services.length);
     services.forEach((service) =>
-      this.metrics?.set(METRIC.UNIVERSE_REGISTRY_SERVICE_ENDPOINTS_TOTAL, service.nodes ? service.node.length : 0, {
+      this.metrics?.set(METRIC.UNIVERSE_REGISTRY_SERVICE_ENDPOINTS_TOTAL, service.nodes ? service.nodes.length : 0, {
         service: service.fullName
       })
     );

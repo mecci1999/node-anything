@@ -230,68 +230,66 @@ export default function metricsHandlerMiddleware(star: Star) {
 
     localEvent(next: any, event: any) {
       const service = event.service ? event.service.name : null;
-      if (star.isMetricsEnabled()) {
-        const metricsMiddleware = (ctx: Context) => {
-          const group = event.group || service;
-          metrics?.increment(METRIC.UNIVERSE_EVENT_RECEIVED_TOTAL, {
-            service,
-            event: ctx.eventName,
-            group,
-            caller: ctx.caller
-          });
-          metrics?.increment(METRIC.UNIVERSE_EVENT_RECEIVED_ACTIVE, {
-            service,
-            event: ctx.eventName,
-            group,
-            caller: ctx.caller
-          });
-          const timeEnd = metrics?.timer(METRIC.UNIVERSE_EVENT_RECEIVED_TIME, {
-            service,
-            event: ctx.eventName,
-            group,
-            caller: ctx.caller
-          });
+      const group = event.group || service;
 
-          return next
-            .apply(this, arguments)
-            .then((res) => {
-              if (timeEnd) {
-                timeEnd();
-              }
-              metrics?.decrement(METRIC.UNIVERSE_EVENT_RECEIVED_ACTIVE, {
-                service,
-                event: ctx.eventName,
-                group,
-                caller: ctx.caller
-              });
+      const handleMetrics = (ctx: Context) => {
+        metrics?.increment(METRIC.UNIVERSE_EVENT_RECEIVED_TOTAL, {
+          service,
+          event: ctx.eventName,
+          group,
+          caller: ctx.caller
+        });
+        metrics?.increment(METRIC.UNIVERSE_EVENT_RECEIVED_ACTIVE, {
+          service,
+          event: ctx.eventName,
+          group,
+          caller: ctx.caller
+        });
+        const timeEnd = metrics?.timer(METRIC.UNIVERSE_EVENT_RECEIVED_TIME, {
+          service,
+          event: ctx.eventName,
+          group,
+          caller: ctx.caller
+        });
 
-              return res;
-            })
-            .catch((err) => {
-              if (timeEnd) {
-                timeEnd();
-              }
-              metrics?.decrement(METRIC.UNIVERSE_EVENT_RECEIVED_ACTIVE, {
-                service,
-                event: ctx.eventName,
-                group,
-                caller: ctx.caller
-              });
-              metrics?.decrement(METRIC.UNIVERSE_EVENT_RECEIVED_ERROR_TOTAL, {
-                service,
-                event: ctx.eventName,
-                group,
-                caller: ctx.caller,
-                errorName: err ? err.name : null,
-                errorCode: err ? err.code : null,
-                errorType: err ? err.type : null
-              });
-
-              throw err;
+        return next(ctx)
+          .then((res) => {
+            if (timeEnd) {
+              timeEnd();
+            }
+            metrics?.decrement(METRIC.UNIVERSE_EVENT_RECEIVED_ACTIVE, {
+              service,
+              event: ctx.eventName,
+              group,
+              caller: ctx.caller
             });
-        };
+            return res;
+          })
+          .catch((err) => {
+            if (timeEnd) {
+              timeEnd();
+            }
+            metrics?.decrement(METRIC.UNIVERSE_EVENT_RECEIVED_ACTIVE, {
+              service,
+              event: ctx.eventName,
+              group,
+              caller: ctx.caller
+            });
+            metrics?.decrement(METRIC.UNIVERSE_EVENT_RECEIVED_ERROR_TOTAL, {
+              service,
+              event: ctx.eventName,
+              group,
+              caller: ctx.caller,
+              errorName: err?.name,
+              errorCode: err?.code,
+              errorType: err?.type
+            });
+            throw err;
+          });
+      };
 
-        return metricsMiddleware.bind(this);
+      if (star.isMetricsEnabled()) {
+        return handleMetrics.bind(this);
       }
 
       return next;
@@ -339,10 +337,10 @@ export default function metricsHandlerMiddleware(star: Star) {
     transitPublish(next: any) {
       const transit = this as any;
       if (star.isMetricsEnabled()) {
-        const metricsMiddleware = () => {
+        const metricsMiddleware = (...args: any[]) => {
           metrics?.increment(METRIC.UNIVERSE_TRANSIT_PUBLISH_TOTAL, { type: arguments[0].type });
 
-          const p = next.apply(this, arguments);
+          const p = next.apply(this, args);
           metrics?.increment(METRIC.UNIVERSE_TRANSIT_REQUESTS_ACTIVE, null, transit.pendingRequests.size);
           metrics?.increment(
             METRIC.UNIVERSE_TRANSIT_STREAMS_SEND_ACTIVE,
@@ -353,7 +351,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           return p;
         };
 
-        return metricsMiddleware.bind(this);
+        return metricsMiddleware;
       }
 
       return next;
