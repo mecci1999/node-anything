@@ -32,7 +32,9 @@ export default class TimeWindowQuantiles {
 
     this.dirty = true;
     this.currentBucket = -1;
+    this.rotate();
     this.lastSnapshot = null;
+    this.setDirty();
   }
 
   /**

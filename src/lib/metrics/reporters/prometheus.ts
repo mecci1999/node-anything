@@ -78,6 +78,7 @@ export default class PrometheusReporter extends BaseReporter {
    * 处理http请求
    */
   private handler(req: http.IncomingMessage, res: http.ServerResponse) {
+    this.logger?.info('Prometheus metric reporter received request: ' + req);
     if (req.url === this.options.path) {
       try {
         const content = this.generatePrometheusResponse();
