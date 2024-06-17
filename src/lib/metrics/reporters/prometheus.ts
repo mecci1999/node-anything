@@ -96,7 +96,7 @@ export default class PrometheusReporter extends BaseReporter {
               res.end(err.message);
             } else {
               res.writeHead(200, resHeader);
-              res.end(content);
+              res.end(buffer);
             }
           });
         } else {
