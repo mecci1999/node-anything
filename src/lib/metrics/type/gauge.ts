@@ -23,7 +23,7 @@ export default class GaugeMetric extends BaseMetric {
 
     const item = this.get(labels);
 
-    return this.set((item ? item.value : 0) - (value || 1), labels, timestamp);
+    return this.set((item ? item.value : 0) + (value || 1), labels, timestamp);
   }
 
   /**

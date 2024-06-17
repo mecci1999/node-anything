@@ -199,7 +199,7 @@ export default class MetricRegistry {
       throw new Error('Invalid metric type. Incrementing works only with counter & gauge metric types.');
     }
 
-    return item?.increment(labels || undefined, value, timestamp);
+    return item?.increment(labels || undefined, value || 1, timestamp);
   }
 
   /**
@@ -212,7 +212,7 @@ export default class MetricRegistry {
     if (item && !isFunction(item.decrement))
       throw new Error('Invalid metric type. Decrementing works only with gauge metric type.');
 
-    return item?.decrement(labels || undefined, value, timestamp);
+    return item?.decrement(labels || undefined, value || 1, timestamp);
   }
 
   /**
