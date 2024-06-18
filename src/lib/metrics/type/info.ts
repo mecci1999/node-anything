@@ -20,14 +20,14 @@ export default class InfoMetric extends BaseMetric {
     if (item) {
       if (value !== item.value) {
         item.value = value;
-        item.timestamp = timestamp === null ? Date.now() : timestamp;
+        item.timestamp = timestamp == null ? Date.now() : timestamp;
         this.changed(value, labels, timestamp);
       }
     } else {
       item = {
         value,
         labels: pick(labels, this.labelNames),
-        timestamp: timestamp === null ? Date.now() : timestamp
+        timestamp: timestamp == null ? Date.now() : timestamp
       };
       this.values.set(hash, item);
       this.changed(value, labels, timestamp);
@@ -43,7 +43,7 @@ export default class InfoMetric extends BaseMetric {
   public resetAll(timestamp: number): void {
     this.values.forEach((item) => {
       item.value = null;
-      item.timestamp = timestamp === null ? Date.now() : timestamp;
+      item.timestamp = timestamp == null ? Date.now() : timestamp;
     });
 
     this.changed(null);

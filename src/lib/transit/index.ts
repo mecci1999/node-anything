@@ -497,7 +497,7 @@ export default class Transit {
     const req = this.pendingRequests.get(id);
 
     // 如果不存在该请求，则不处理
-    if (req === null) {
+    if (req == null) {
       this.logger.debug(
         'Orphan response is received. Maybe the request is timed out earlier. ID:',
         packet.id,
@@ -593,7 +593,7 @@ export default class Transit {
     const payload = {
       id: id,
       meta: meta,
-      success: error === null,
+      success: error == null,
       data: data
     } as GenericObject;
 
@@ -703,7 +703,7 @@ export default class Transit {
   public eventHandler(payload: GenericObject) {
     this.logger.debug(
       `Event '${payload.event}' received from '${payload.sender}' node` +
-        (payload.groups ? ` in '${payload.groups.join(', ')}' group(s)` : '' + '.')
+      (payload.groups ? ` in '${payload.groups.join(', ')}' group(s)` : '' + '.')
     );
 
     if (this.star.stopping) {
@@ -782,8 +782,8 @@ export default class Transit {
     if (ctx.endpoint) {
       this.logger.debug(
         `=> Send '${ctx.eventName}' event ${requestID}to ${ctx.nodeID}' node` +
-          (groups ? ` in '${groups.join(', ')}' group(s)` : '') +
-          '.'
+        (groups ? ` in '${groups.join(', ')}' group(s)` : '') +
+        '.'
       );
     } else {
       this.logger.debug(`=> Send '${ctx.eventName}' event ${requestID}to '${groups?.join(', ')}' group(s).`);
@@ -1215,8 +1215,8 @@ export default class Transit {
     if (ctx.endpoint) {
       this.logger.debug(
         `=> Send '${ctx.eventName}' event ${requestID}to '${ctx.nodeID}' node` +
-          (groups ? ` in '${groups.join(', ')}' group(s)` : '') +
-          '.'
+        (groups ? ` in '${groups.join(', ')}' group(s)` : '') +
+        '.'
       );
     } else {
       this.logger.debug(`=> Send '${ctx.eventName}' event ${requestID}to '${groups?.join(', ')}' group(s).`);

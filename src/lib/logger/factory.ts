@@ -5,7 +5,7 @@ import _ from 'lodash';
 import { isPlainObject, isString } from '@/utils';
 import { LEVELS } from './base';
 
-const noop = () => {};
+const noop = () => { };
 const cwd = process.cwd();
 
 /**
@@ -31,7 +31,7 @@ export class LoggerFactory {
     this.options = options;
     const globalLogLevel = this.star.options.logLevel || 'info';
 
-    if (options === false || options === null) {
+    if (options === false || options == null) {
       // 没有日志
       this.appenders = [];
     } else if (options === true || options === console) {
@@ -127,13 +127,13 @@ export class LoggerFactory {
     });
 
     /*logger.log = function(type, ...args) {
-			if (broker.middlewares)
-				broker.middlewares.callSyncHandlers("newLogEntry", [type, args, bindings], {});
+      if (broker.middlewares)
+        broker.middlewares.callSyncHandlers("newLogEntry", [type, args, bindings], {});
 
-			if (logHandlers.length == 0) return;
+      if (logHandlers.length == 0) return;
 
-			logHandlers.forEach(fn => fn(type, args));
-		};*/
+      logHandlers.forEach(fn => fn(type, args));
+    };*/
 
     logger.appenders = appenders;
 

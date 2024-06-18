@@ -6,7 +6,7 @@ import { GenericObject } from '@/typings';
 export default class BaseSerializer {
   public star: Star | null = null;
 
-  constructor() {}
+  constructor() { }
 
   /**
    * 初始化序列化

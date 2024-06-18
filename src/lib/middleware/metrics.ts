@@ -31,7 +31,7 @@ export default function metricsHandlerMiddleware(star: Star) {
             timeEnd();
           }
           metrics?.decrement(METRIC.UNIVERSE_REQUEST_ACTIVE, { service, action, caller, type });
-          metrics?.decrement(METRIC.UNIVERSE_REQUEST_ERROR_TOTAL, {
+          metrics?.increment(METRIC.UNIVERSE_REQUEST_ERROR_TOTAL, {
             service,
             action,
             caller,

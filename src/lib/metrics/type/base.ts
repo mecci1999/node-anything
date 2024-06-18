@@ -21,7 +21,7 @@ export default class BaseMetric {
     this.description = options.description || '';
     this.labelNames = options.labelNames || [];
     this.unit = options.unit || '';
-    this.aggregator = options.aggregator || '';
+    this.aggregator = options.aggregator || registry.options.defaultAggregator || '';
     this.lastSnapshot = null;
     this.dirty = true;
     this.values = new Map();
@@ -82,8 +82,8 @@ export default class BaseMetric {
   /**
    * hash处理Labels信息，用来作为key值
    */
-  public hashingLabels(labels: GenericObject) {
-    if (this.labelNames.length === 0 || labels === null || typeof labels !== 'object') return '';
+  public hashingLabels(labels?: GenericObject) {
+    if (this.labelNames.length === 0 || labels == null || typeof labels !== 'object') return '';
 
     const parts: Array<string | number> = [];
     for (let i = 0; i < this.labelNames.length; i++) {

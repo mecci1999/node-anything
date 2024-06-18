@@ -111,7 +111,7 @@ export default class HistogramMetric extends BaseMetric {
    * 重置某个值
    */
   public resetItem(item: GenericObject, timestamp?: number) {
-    item.timestamp = timestamp === null ? Date.now() : timestamp;
+    item.timestamp = timestamp == null ? Date.now() : timestamp;
     item.sum = 0;
     item.count = 0;
     item.lastValue = null;

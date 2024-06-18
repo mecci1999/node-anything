@@ -78,7 +78,7 @@ export default class PrometheusReporter extends BaseReporter {
    * 处理http请求
    */
   private handler(req: http.IncomingMessage, res: http.ServerResponse) {
-    this.logger?.info('Prometheus metric reporter received request: ' + req);
+    this.logger?.info('Prometheus metric reporter received request: ' + req.rawHeaders);
     if (req.url === this.options.path) {
       try {
         const content = this.generatePrometheusResponse();
@@ -132,7 +132,7 @@ export default class PrometheusReporter extends BaseReporter {
    */
   private generatePrometheusResponse() {
     const content: string[] = [];
-    const val = (value: any) => (value === null ? 'NaN' : value);
+    const val = (value: any) => (value == null ? 'NaN' : value);
 
     this.registry?.store.forEach((metric) => {
       // 过滤脏数据
@@ -151,7 +151,7 @@ export default class PrometheusReporter extends BaseReporter {
       // 快照数据
       const snapshot = metric.snapshot();
 
-      if (!snapshot || (snapshot && snapshot?.length === 0)) return;
+      if (!snapshot || (snapshot.length === 0)) return;
 
       switch (metric.type) {
         case METRIC.TYPE_COUNTER:

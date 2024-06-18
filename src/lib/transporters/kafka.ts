@@ -13,7 +13,7 @@ export default class KafkaTransporter extends BaseTransporter {
   constructor(options: any) {
     if (typeof options === 'string') {
       options = { host: options.replace('kafka://', '') };
-    } else if (options === null) {
+    } else if (options == null) {
       options = {};
     }
 

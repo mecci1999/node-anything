@@ -20,6 +20,6 @@ export default class Bucket {
    */
   public clear() {
     this.count = 0;
-    this.samples = [];
+    this.samples.length = 0;
   }
 }

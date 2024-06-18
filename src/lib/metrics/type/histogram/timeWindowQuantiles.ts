@@ -60,9 +60,7 @@ export default class TimeWindowQuantiles {
     this.ringBuckets[this.currentBucket].clear();
     this.setDirty();
     // 定期执行轮转操作，将当前桶索引递增并清空对应桶的数据，用于定期清理数据
-    setTimeout(() => {
-      this.rotate();
-    }, (this.maxAgeSeconds / this.ageBuckets) * 1000).unref();
+    setTimeout(() => this.rotate(), (this.maxAgeSeconds / this.ageBuckets) * 1000).unref();
   }
 
   /**

@@ -180,7 +180,6 @@ export default class MetricRegistry {
     if (!this.options.enabled) return null;
 
     const item = this.getMetric(name);
-
     if (item && !isFunction(item.set)) {
       throw new Error('Invald metric type. Value setting works only with counter, gauge & info metric types.');
     }
@@ -286,7 +285,7 @@ export default class MetricRegistry {
    */
   public list(options?: GenericObject) {
     const res: GenericObject[] = [];
-    options = options || [];
+    options = options || {};
 
     const types = options.types != null ? (isString(options.types) ? [options.types] : options.types) : null;
     const includes =
@@ -295,7 +294,7 @@ export default class MetricRegistry {
       options.excludes != null ? (isString(options.excludes) ? [options.excludes] : options.excludes) : null;
 
     this.store.forEach((metric) => {
-      if (types && !types.some((type) => metric.type === type)) return;
+      if (types && !types.some((type) => metric.type == type)) return;
 
       if (includes && !includes.some((pattern) => match(metric.name, pattern))) return;
 

@@ -19,7 +19,7 @@ export default class GaugeMetric extends BaseMetric {
    * 增加值
    */
   public increment(labels: GenericObject, value?: number, timestamp?: number) {
-    if (value === null) value = 1;
+    if (value == null) value = 1;
 
     const item = this.get(labels);
 
@@ -30,7 +30,7 @@ export default class GaugeMetric extends BaseMetric {
    * 减少值
    */
   public decrement(labels: GenericObject, value?: number, timestamp?: number) {
-    if (value === null) value = 1;
+    if (value == null) value = 1;
 
     const item = this.get(labels);
 
@@ -41,16 +41,17 @@ export default class GaugeMetric extends BaseMetric {
    * 设置值
    */
   public set(value: number, labels?: GenericObject, timestamp?: number) {
-    if (!labels) return;
-
+    // 过滤掉无效的标签
     const hash = this.hashingLabels(labels);
+    // 获取指标
     let item = this.values.get(hash);
 
     if (item) {
       // 存在该指标，更新数据
       if (item.value !== value) {
         item.value = value;
-        item.timestamp = timestamp === null ? Date.now() : timestamp;
+        // 更新时间戳
+        item.timestamp = timestamp == null ? Date.now() : timestamp;
 
         if (item.rate) item.rate.update(value);
 
@@ -61,12 +62,14 @@ export default class GaugeMetric extends BaseMetric {
       item = {
         value,
         labels: pick(labels, this.labelNames),
-        timestamp: timestamp === null ? Date.now() : timestamp
+        timestamp: timestamp == null ? Date.now() : timestamp
       };
       this.values.set(hash, item);
 
       if (this.rate) {
+        // 初始化速率
         item.rate = new MetricRate(this, item, 1);
+        // 更新速率
         item.rate.update(value);
       }
 
@@ -89,7 +92,7 @@ export default class GaugeMetric extends BaseMetric {
   public resetAll(timestamp: number): void {
     this.values.forEach((item) => {
       item.value = 0;
-      item.timestamp = timestamp === null ? Date.now() : timestamp;
+      item.timestamp = timestamp == null ? Date.now() : timestamp;
     });
 
     this.changed(null, null, timestamp);
@@ -114,7 +117,6 @@ export default class GaugeMetric extends BaseMetric {
 
       return res;
     });
-
     return snapshot;
   }
 }

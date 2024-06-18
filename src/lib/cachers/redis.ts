@@ -179,7 +179,7 @@ export default class RedisCacher extends BaseCacher {
     data = this.serializer?.serialize(data);
     this.logger?.debug(`SET ${key}`);
 
-    if (ttl === null) {
+    if (ttl == null) {
       ttl = this.options.ttl;
     }
 
@@ -304,7 +304,7 @@ export default class RedisCacher extends BaseCacher {
    * 分布式进程锁
    */
   public lock(key: string | string[], ttl?: number): Promise<any> {
-    if (this.redlock === null) {
+    if (this.redlock == null) {
       return this._handleMissingRedlock();
     }
 
@@ -319,7 +319,7 @@ export default class RedisCacher extends BaseCacher {
    * 创建一个进程锁
    */
   public tryLock(key: string | string[], ttl?: number): Promise<any> {
-    if (this.redlockNonBlocking === null) {
+    if (this.redlockNonBlocking == null) {
       return this._handleMissingRedlock();
     }
 

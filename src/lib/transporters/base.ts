@@ -162,7 +162,7 @@ export default class BaseTransporter {
       }
     }
 
-    if (packet.type === PacketTypes.PACKET_EVENT && packet.target === null && packet.payload.groups) {
+    if (packet.type === PacketTypes.PACKET_EVENT && packet.target == null && packet.payload.groups) {
       const groups = packet.payload.groups;
       // 如果数据包中包含组名，我们不直接发送数据包到对应的node节点，而是选择将它push到事件队列中，等待负载均衡
       if (groups.length > 0) {

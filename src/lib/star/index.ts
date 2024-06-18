@@ -737,7 +737,7 @@ export default class Star {
   public _getLocalActionEndpoint(actionName: string, ctx?: Context) {
     // 通过动作名获取动作
     let epList = this.registry?.getActionEndpoints(actionName);
-    if (epList === null || !epList?.hasLocal()) {
+    if (epList == null || !epList?.hasLocal()) {
       // 没有本地的动作
       this.logger?.warn(`Service '${actionName}' is not registered locally.`);
       throw new ServiceNotFoundError({ action: actionName, nodeID: `${this.nodeID}` });
@@ -1405,8 +1405,8 @@ export default class Star {
     options:
       | boolean
       | {
-          [key: string]: Partial<ServiceSchema>;
-        }
+        [key: string]: Partial<ServiceSchema>;
+      }
   ) {
     options = isObject(options) ? options : {};
 
@@ -1531,7 +1531,7 @@ export default class Star {
       servicesFiles = glob.sync(path.join(folder, fileMask));
     }
 
-    if(servicesFiles) {
+    if (servicesFiles) {
       servicesFiles.forEach(filename => this.loadService(filename));
     }
 

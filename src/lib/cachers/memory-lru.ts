@@ -115,7 +115,7 @@ export default class MemoryLRUCacher extends BaseCacher {
     this.metrics?.increment(METRIC.UNIVERSE_CACHER_SET_TOTAL);
     const timeEnd = this.metrics?.timer(METRIC.UNIVERSE_CACHER_SET_TIME);
 
-    if (ttl === null) {
+    if (ttl == null) {
       ttl = this.options.ttl;
     }
 
