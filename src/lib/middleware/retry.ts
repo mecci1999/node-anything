@@ -72,7 +72,7 @@ const retryMiddleware = (star: Star) => {
           name: METRIC.UNIVERSE_REQUEST_RETRY_ATTEMPTS_TOTAL,
           type: METRIC.TYPE_COUNTER,
           labelNames: ['service', 'action'],
-          description: 'Number of retries',
+          description: '重试次数',
           rate: true
         });
       }

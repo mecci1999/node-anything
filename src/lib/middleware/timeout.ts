@@ -57,7 +57,7 @@ export default function (star: Star) {
           name: METRIC.UNIVERSE_REQUEST_TIMEOUT_TOTAL,
           type: METRIC.TYPE_COUNTER,
           labelNames: ['service', 'action'],
-          description: 'Number of timed out requests',
+          description: '超时请求的数量',
           rate: true
         });
       }

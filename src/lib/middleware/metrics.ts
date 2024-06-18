@@ -55,7 +55,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_COUNTER,
           labelNames: ['service', 'action', 'type', 'caller'],
           unit: METRIC.UNIT_REQUEST,
-          description: 'Number of requests',
+          description: '微服务请求总数量',
           rate: true
         });
         metrics?.register({
@@ -63,14 +63,14 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_GAUGE,
           labelNames: ['service', 'action', 'type', 'caller'],
           unit: METRIC.UNIT_REQUEST,
-          description: 'Number of active requests'
+          description: '微服务正在活跃状态的请求数量'
         });
         metrics?.register({
           name: METRIC.UNIVERSE_REQUEST_ERROR_TOTAL,
           type: METRIC.TYPE_COUNTER,
           labelNames: ['srvice', 'action', 'type', 'caller', 'errorName', 'errorCode', 'errorType'],
           unit: METRIC.UNIT_REQUEST,
-          description: 'Number of request errors',
+          description: '返回错误的请求总数量',
           rate: true
         });
         metrics?.register({
@@ -80,7 +80,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           quantiles: true,
           buckets: true,
           unit: METRIC.UNIT_MILLISECONDS,
-          description: 'Request times in milliseconds',
+          description: '请求耗时（毫秒）',
           rate: true
         });
         metrics?.register({
@@ -88,7 +88,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_COUNTER,
           labelNames: ['level'],
           unit: METRIC.UNIT_REQUEST,
-          description: 'Number of requests by context level'
+          description: '按上下文级别统计的请求数量'
         });
 
         // 事件
@@ -97,7 +97,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_COUNTER,
           labelNames: ['event', 'groups'],
           unit: METRIC.UNIT_EVENT,
-          description: 'Number of emitted events',
+          description: '触发的事件数量',
           rate: true
         });
         metrics?.register({
@@ -105,7 +105,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_COUNTER,
           labelNames: ['event', 'groups'],
           unit: METRIC.UNIT_EVENT,
-          description: 'Number of broadcast events',
+          description: '广播事件的数量',
           rate: true
         });
         metrics?.register({
@@ -113,7 +113,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_COUNTER,
           labelNames: ['event', 'groups'],
           unit: METRIC.UNIT_EVENT,
-          description: 'Number of local broadcast events',
+          description: '本地广播事件的数量',
           rate: true
         });
         metrics?.register({
@@ -121,7 +121,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_COUNTER,
           labelNames: ['service', 'group', 'event', 'caller'],
           unit: METRIC.UNIT_EVENT,
-          description: 'Number of received events',
+          description: '接收到的事件数量',
           rate: true
         });
         metrics?.register({
@@ -129,14 +129,14 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_GAUGE,
           labelNames: ['service', 'group', 'event', 'caller'],
           unit: METRIC.UNIT_REQUEST,
-          description: 'Number of active event executions'
+          description: '活跃事件执行的数量'
         });
         metrics?.register({
           name: METRIC.UNIVERSE_EVENT_RECEIVED_ERROR_TOTAL,
           type: METRIC.TYPE_COUNTER,
           labelNames: ['service', 'group', 'event', 'caller', 'errorName', 'errorCode', 'errorType'],
           unit: METRIC.UNIT_REQUEST,
-          description: 'Number of event excution errors',
+          description: '事件执行错误的数量',
           rate: true
         });
         metrics?.register({
@@ -146,7 +146,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           quantiles: true,
           buckets: true,
           unit: METRIC.UNIT_MILLISECONDS,
-          description: 'Execution time of events in milliseconds',
+          description: '事件执行时间（毫秒）',
           rate: true
         });
 
@@ -156,7 +156,7 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_COUNTER,
           labelNames: ['type'],
           unit: METRIC.UNIT_PACKET,
-          description: 'Number of published packets',
+          description: '已发布数据包的数量',
           rate: true
         });
         metrics?.register({
@@ -164,20 +164,20 @@ export default function metricsHandlerMiddleware(star: Star) {
           type: METRIC.TYPE_COUNTER,
           labelNames: ['type'],
           unit: METRIC.UNIT_PACKET,
-          description: 'Number of received packets',
+          description: '接收到的数据包数量',
           rate: true
         });
         metrics?.register({
           name: METRIC.UNIVERSE_TRANSIT_REQUESTS_ACTIVE,
           type: METRIC.TYPE_GAUGE,
           unit: METRIC.UNIT_REQUEST,
-          description: 'Number of active requests'
+          description: '活动请求的数量'
         });
         metrics?.register({
           name: METRIC.UNIVERSE_TRANSIT_STREAMS_SEND_ACTIVE,
           type: METRIC.TYPE_GAUGE,
           unit: METRIC.UNIT_REQUEST,
-          description: 'Number of active sent streams'
+          description: '活动发送流的数量'
         });
 
         // 底层传输模块
@@ -185,28 +185,28 @@ export default function metricsHandlerMiddleware(star: Star) {
           name: METRIC.UNIVERSE_TRANSPORTER_PACKETS_SENT_TOTAL,
           type: METRIC.TYPE_COUNTER,
           unit: METRIC.UNIT_PACKET,
-          description: 'Number of sent packets',
+          description: '已发送数据包的数量',
           rate: true
         });
         metrics?.register({
           name: METRIC.UNIVERSE_TRANSPORTER_PACKETS_SENT_BYTES,
           type: METRIC.TYPE_COUNTER,
           unit: METRIC.UNIT_BYTE,
-          description: 'Number of sent bytes',
+          description: '发送的字节数',
           rate: true
         });
         metrics?.register({
           name: METRIC.UNIVERSE_TRANSPORTER_PACKETS_RECEIVED_TOTAL,
           type: METRIC.TYPE_COUNTER,
           unit: METRIC.UNIT_PACKET,
-          description: 'Number of received packets',
+          description: '接收数据包的数量',
           rate: true
         });
         metrics?.register({
           name: METRIC.UNIVERSE_TRANSPORTER_PACKETS_RECEIVED_BYTES,
           type: METRIC.TYPE_COUNTER,
           unit: METRIC.UNIT_BYTE,
-          description: 'Number of received bytes',
+          description: '接收字节的数量',
           rate: true
         });
       }
