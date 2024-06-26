@@ -527,7 +527,7 @@ function getUserInfo() {
  * 更新通用指标数据
  */
 function updateCommonMetrics(registry: MetricRegistry) {
-  registry.logger.debug('Update common metric values...');
+  // registry.logger.debug('Update common metric values...');
   const end = registry.timer();
 
   // 获取进程内容相关情况
@@ -663,7 +663,7 @@ function updateCommonMetrics(registry: MetricRegistry) {
         registry.logger.warn('Unable to collect CPU usage metrics.', err);
       })
       .then(() => {
-        registry.logger.debug(`Collected common metric values in ${duration.toFixed(3)} msec.`);
+        // registry.logger.debug(`Collected common metric values in ${duration.toFixed(3)} msec.`);
       });
   });
 }
